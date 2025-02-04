@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Image, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import api from '../services/api';
 
 const WelcomeScreen = () => {
   const navigation = useNavigation();
@@ -22,8 +23,37 @@ const WelcomeScreen = () => {
     ]).start();
   }, []);
 
+  const showContactInfo = () => {
+    Alert.alert(
+      'Contact Information',
+      'Email: asmart@gmail.com\nPhone: 0779654710',
+      [{ text: 'OK' }]
+    );
+  };
+
+  const handleGetStarted = async () => {
+    try {
+      // You can add any initial API checks here if needed
+      navigation.navigate('Login');
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        'Unable to connect to the server. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
   return (
     <View style={styles.container}>
+      <Animated.View style={[styles.logoContainer, { opacity: fadeAnim }]}>
+        <Image 
+          source={require('../../assets/logo1.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+      </Animated.View>
+
       <Animated.View style={[styles.contentContainer, { opacity: fadeAnim }]}>
         <Text style={styles.title}>Welcome to</Text>
         <Text style={styles.appName}>Local Government Assets Management</Text>
@@ -41,11 +71,31 @@ const WelcomeScreen = () => {
       >
         <TouchableOpacity 
           style={styles.button}
-          onPress={() => navigation.navigate('Login')}
+          onPress={handleGetStarted}
         >
           <Text style={styles.buttonText}>Get Started</Text>
         </TouchableOpacity>
       </Animated.View>
+
+      {/* Developer Info Section */}
+      <View style={styles.developerSection}>
+        <View style={styles.developerPhotoContainer}>
+          <Image 
+            source={require('../../assets/ASIIMWE.png')}
+            style={styles.developerPhoto}
+          />
+        </View>
+        <View style={styles.developerInfo}>
+          <Text style={styles.developerName}>ASIIMWE LUCKY</Text>
+          <Text style={styles.developerTitle}>Lead Developer</Text>
+        </View>
+        <TouchableOpacity 
+          style={styles.contactButton}
+          onPress={showContactInfo}
+        >
+          <Text style={styles.contactButtonText}>Contact</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -53,45 +103,104 @@ const WelcomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  developerSection: {
+    position: 'absolute',
+    bottom: 20,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0, 0, 139, 0.1)',
+  },
+  developerPhotoContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: '#00008B',
+  },
+  developerPhoto: {
+    width: '100%',
+    height: '100%',
+  },
+  developerInfo: {
+    flex: 1,
+    paddingHorizontal: 15,
+  },
+  developerName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#00008B',
+  },
+  developerTitle: {
+    fontSize: 14,
+    color: '#666',
+  },
+  contactButton: {
+    backgroundColor: '#00008B',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 15,
+  },
+  contactButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  logo: {
+    width: 150,
+    height: 150,
   },
   contentContainer: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 40,
   },
   title: {
-    fontSize: 24,
-    color: '#1a237e',
-    marginBottom: 10,
+    fontSize: 34,
+    color: '#333',
+    marginBottom: 15,
   },
   appName: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1a237e',
+    color: "#00008B",
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 10,
+    lineHeight: 36, // Adjust the spacing between lines
   },
   motto: {
-    fontSize: 18,
-    color: '#d32f2f',
+    fontSize: 16,
+    color: '#666',
     textAlign: 'center',
-    fontStyle: 'italic',
   },
   buttonContainer: {
     width: '100%',
-    paddingBottom: 40,
-  },
-  button: {
-    backgroundColor: '#1a237e',
-    padding: 15,
-    borderRadius: 10,
     alignItems: 'center',
   },
+  button: {
+    backgroundColor: "#00008B",
+    paddingHorizontal: 40,
+    paddingVertical: 15,
+    borderRadius: 25,
+    elevation: 3,
+  },
   buttonText: {
-    color: '#FFFFFF',
+    color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
   },

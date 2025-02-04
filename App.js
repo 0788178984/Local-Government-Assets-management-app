@@ -8,6 +8,7 @@ import { StyleSheet, Text, View, SafeAreaView } from 'react-native';
 // Import screen components
 import LoginScreen from './src/screens/LoginScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
+import WelcomeScreen from './src/screens/WelcomeScreen';
 
 // Create a stack navigator
 const Stack = createStackNavigator();
@@ -25,12 +26,13 @@ export default function App() {
       <SafeAreaView style={{ flex: 1 }}>
         {/* Stack Navigator configuration */}
         <Stack.Navigator 
-          initialRouteName="Login"
+          initialRouteName="Welcome"
           screenOptions={{
             headerShown: false,
           }}
         >
           {/* Define screen routes */}
+          <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Dashboard" component={DashboardScreen} />
         </Stack.Navigator>
