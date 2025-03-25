@@ -17,7 +17,7 @@ import MaintenanceRecordsScreen from './src/screens/MaintenanceRecordsScreen';
 import MaintenanceSchedulesScreen from './src/screens/MaintenanceSchedulesScreen';
 import AddTeamScreen from './src/screens/AddTeamScreen';
 import AddRecordScreen from './src/screens/AddRecordScreen';
-import AddMaintenance from './src/screens/AddMaintenance';
+import AddScheduleScreen from './src/screens/AddScheduleScreen';
 import AssetsScreen from './src/screens/AssetsScreen';
 import AddAssetScreen from './src/screens/AddAssetScreen';
 import EditAssetScreen from './src/screens/EditAssetScreen';
@@ -28,7 +28,6 @@ import SettingsScreen from './src/screens/SettingsScreen';
 import EditProfile from './src/screens/EditProfile';
 import ChangePassword from './src/screens/ChangePassword';
 import MaintenanceScreen from './src/screens/MaintenanceScreen';
-import AddScheduleScreen from './src/screens/AddScheduleScreen';
 import TeamsScreen from './src/screens/TeamsScreen';
 import EditTeamScreen from './src/screens/EditTeamScreen';
 import ApiTestScreen from './src/screens/ApiTestScreen';
@@ -134,14 +133,6 @@ const AppNavigator = () => {
         component={MaintenanceSchedulesScreen}
         options={{
           title: 'Maintenance Schedules',
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen 
-        name="AddMaintenance" 
-        component={AddMaintenance}
-        options={{
-          title: 'Add Maintenance Record',
           headerShown: true,
         }}
       />

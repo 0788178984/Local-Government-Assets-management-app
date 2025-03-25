@@ -134,7 +134,7 @@ const MaintenanceRecordsScreen = ({ navigation }) => {
 
       <TouchableOpacity
         style={[styles.addButton, { backgroundColor: colors.primary }]}
-        onPress={() => navigation.navigate('AddMaintenance')}
+        onPress={() => navigation.navigate('AddRecord')}
       >
         <Text style={styles.addButtonText}>+ Add Maintenance</Text>
       </TouchableOpacity>

@@ -11,6 +11,30 @@ $database = new Database();
 $db = $database->getConnection();
 
 try {
+    // Check if table exists, if not create it
+    $checkTable = "SHOW TABLES LIKE 'MaintenanceRecords'";
+    $result = $db->query($checkTable);
+    
+    if ($result->rowCount() == 0) {
+        $createTable = "CREATE TABLE IF NOT EXISTS MaintenanceRecords (
+            MaintenanceID INT(11) NOT NULL AUTO_INCREMENT,
+            AssetID INT(11) NOT NULL,
+            TeamID INT(11) NOT NULL,
+            MaintenanceDate DATE NOT NULL,
+            MaintenanceType VARCHAR(50) NOT NULL,
+            Description TEXT NOT NULL,
+            Cost DECIMAL(10,2) NOT NULL,
+            MaintenanceStatus VARCHAR(20) DEFAULT 'Pending',
+            MaintenanceProvider VARCHAR(100),
+            PRIMARY KEY (MaintenanceID),
+            FOREIGN KEY (AssetID) REFERENCES Assets(AssetID) ON DELETE CASCADE,
+            FOREIGN KEY (TeamID) REFERENCES MaintenanceTeams(TeamID) ON DELETE CASCADE
+        )";
+        
+        $db->exec($createTable);
+        error_log("MaintenanceRecords table created successfully");
+    }
+
     // Get posted data
     $data = json_decode(file_get_contents("php://input"));
 
@@ -26,17 +50,17 @@ try {
         !empty($data->description) &&
         !empty($data->cost)
     ) {
+        // Set default values for optional fields
+        $maintenanceStatus = !empty($data->maintenanceStatus) ? $data->maintenanceStatus : 'Pending';
+        $maintenanceProvider = !empty($data->maintenanceProvider) ? $data->maintenanceProvider : '';
+
         // Insert maintenance record
         $query = "INSERT INTO MaintenanceRecords 
-                    SET 
-                      AssetID = :assetId,
-                      TeamID = :teamId,
-                      MaintenanceDate = :maintenanceDate,
-                      MaintenanceType = :maintenanceType,
-                      Description = :description,
-                      Cost = :cost,
-                      MaintenanceStatus = :maintenanceStatus,
-                      MaintenanceProvider = :maintenanceProvider";
+                    (AssetID, TeamID, MaintenanceDate, MaintenanceType, Description, 
+                     Cost, MaintenanceStatus, MaintenanceProvider)
+                 VALUES 
+                    (:assetId, :teamId, :maintenanceDate, :maintenanceType, :description,
+                     :cost, :maintenanceStatus, :maintenanceProvider)";
 
         $stmt = $db->prepare($query);
 
@@ -47,11 +71,14 @@ try {
         $stmt->bindParam(":maintenanceType", $data->maintenanceType);
         $stmt->bindParam(":description", $data->description);
         $stmt->bindParam(":cost", $data->cost);
-        $stmt->bindParam(":maintenanceStatus", $data->maintenanceStatus);
-        $stmt->bindParam(":maintenanceProvider", $data->maintenanceProvider);
+        $stmt->bindParam(":maintenanceStatus", $maintenanceStatus);
+        $stmt->bindParam(":maintenanceProvider", $maintenanceProvider);
 
         if ($stmt->execute()) {
-            // Update asset's maintenance status using named parameters
+            $newId = $db->lastInsertId();
+            error_log("New maintenance record ID: " . $newId);
+
+            // Update asset's maintenance status
             $updateAssetQuery = "UPDATE Assets 
                                SET LastMaintenanceDate = :maintenanceDate,
                                    MaintenanceStatus = :status
@@ -70,13 +97,15 @@ try {
                 "status" => "success",
                 "message" => "Maintenance record created successfully",
                 "data" => [
-                    "id" => $db->lastInsertId(),
+                    "id" => $newId,
                     "assetId" => $data->assetId,
                     "maintenanceDate" => $data->maintenanceDate
                 ]
             ]);
         } else {
-            throw new Exception("Failed to create maintenance record");
+            $errorInfo = $stmt->errorInfo();
+            error_log("Database error: " . print_r($errorInfo, true));
+            throw new Exception("Failed to create maintenance record: " . $errorInfo[2]);
         }
     } else {
         http_response_code(400);
