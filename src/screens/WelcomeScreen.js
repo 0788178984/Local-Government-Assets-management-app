@@ -25,15 +25,14 @@ const WelcomeScreen = () => {
 
   const showContactInfo = () => {
     Alert.alert(
-      'Contact Information',
-      'Email: asmart@gmail.com\nPhone: 0779654710',
-      [{ text: 'OK' }]
+      'Contact Details',
+      'Email: asmart@gmail.com\nPhone: +256779654710',
+      [{ text: 'OK', onPress: () => console.log('OK Pressed') }]
     );
   };
 
   const handleGetStarted = async () => {
     try {
-      // You can add any initial API checks here if needed
       navigation.navigate('Login');
     } catch (error) {
       Alert.alert(
@@ -181,7 +180,7 @@ const styles = StyleSheet.create({
     color: "#00008B",
     textAlign: 'center',
     marginBottom: 10,
-    lineHeight: 36, // Adjust the spacing between lines
+    lineHeight: 36,
   },
   motto: {
     fontSize: 16,

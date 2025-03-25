@@ -1,71 +1,184 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
+import config from '../config/config';
 
-// Choose the appropriate URL based on the platform
-const getBaseUrl = () => {
-    if (Platform.OS === 'android') {
-        return 'http://10.20.1.236:80/LocalGovtAssetMgt_App/backend/api'; // Your IP with port 80
-    } else if (Platform.OS === 'ios') {
-        return 'http://localhost/LocalGovtAssetMgt_App/backend/api';
-    } else {
-        return 'http://localhost/LocalGovtAssetMgt_App/backend/api';
-    }
-};
+// Get API URL from config - ensure we use the correct IP address
+export const API_URL = 'http://10.20.1.155/LocalGovtAssetMgt_App/backend/api/';
 
-const API_URL = getBaseUrl();
-
+// Create axios instance
 const api = axios.create({
     baseURL: API_URL,
+    timeout: 10000,
     headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
-    },
-    timeout: 10000, // 10 second timeout
+        'Accept': 'application/json'
+    }
 });
 
-// Handle errors globally
+// API Endpoints - ensure no leading slashes since baseURL has trailing slash
+export const ENDPOINTS = {
+    login: 'users/login.php',
+    register: 'users/register.php',
+    assets: 'assets/read.php',
+    createAsset: 'assets/create.php',
+    teams: 'teams/read.php',
+    createTeam: 'teams/create.php',
+    maintenance: 'maintenance_records/read.php',
+    createMaintenance: 'maintenance_records/create.php',
+    reports: 'reports/read.php',
+    createReport: 'reports/create.php',
+    generateReport: 'reports/generate.php',
+    deleteAsset: 'assets/delete.php',
+    deleteTeam: 'teams/delete.php',
+    deleteMaintenance: 'maintenance_records/delete.php'
+};
+
+// Add auth token interceptor
+api.interceptors.request.use(async (config) => {
+    try {
+    const token = await AsyncStorage.getItem('userToken');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+    } catch (error) {
+        console.error('Error setting auth token:', error);
+        return config;
+    }
+});
+
+// Log requests
+api.interceptors.request.use(request => {
+    console.log('Starting Request:', {
+        url: request.url,
+        method: request.method,
+        data: request.data,
+        headers: request.headers
+    });
+    return request;
+});
+
+// Log responses
+api.interceptors.response.use(
+    response => {
+        console.log('Response:', {
+            status: response.status,
+            data: response.data
+        });
+        return response;
+    },
+    error => {
+        if (error.response) {
+            // The request was made and the server responded with a status code
+            // that falls out of the range of 2xx
+            console.error('API Error Response:', {
+                status: error.response.status,
+                data: error.response.data,
+                headers: error.response.headers
+            });
+        } else if (error.request) {
+            // The request was made but no response was received
+            console.error('API No Response:', error.request);
+        } else {
+            // Something happened in setting up the request that triggered an Error
+            console.error('API Request Setup Error:', error.message);
+        }
+        return Promise.reject(error);
+    }
+);
+
+// Add better error handling
 const handleError = (error) => {
     if (error.response) {
         // Server responded with error status
-        console.error('Response Error:', error.response.data);
         return {
             status: 'error',
-            message: error.response.data.message || 'Server error occurred'
+            message: error.response.data.message || 'Server error',
+            code: error.response.status
         };
     } else if (error.request) {
         // Request made but no response
-        console.error('Network Error - No Response');
         return {
             status: 'error',
-            message: 'Unable to connect to server. Please check your internet connection and make sure the server is running.'
-        };
-    } else {
-        // Error in request setup
-        console.error('Request Error:', error.message);
-        return {
-            status: 'error',
-            message: 'An error occurred while setting up the request'
+            message: `Network connection error. Please check if the server is running at ${API_URL}`,
+            code: 'NETWORK_ERROR'
         };
     }
+        return {
+            status: 'error',
+        message: 'Request configuration error',
+        code: 'CONFIG_ERROR'
+        };
 };
 
 // Authentication APIs
 export const login = async (email, password) => {
     try {
-        console.log('Attempting login to:', API_URL);
-        const response = await api.post('/login.php', { 
-            email, 
-            password 
+        const loginUrl = ENDPOINTS.login;
+        console.log('Login URL:', `${API_URL}${loginUrl}`);
+        
+        // Check if server is reachable
+        try {
+            await fetch(`${API_URL}ping.php`);
+        } catch (networkError) {
+            console.error('Server not reachable:', networkError);
+            return {
+                status: 'error',
+                message: `Server not reachable at ${API_URL}. Please check your connection and server status.`
+            };
+        }
+        
+        // Ensure data is properly formatted
+        const loginData = {
+            email: email.trim(),
+            password: password.trim()
+        };
+        
+        console.log('Sending login data:', loginData);
+        
+        const response = await api.post(loginUrl, loginData, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            timeout: 5000, // 5 second timeout
+            validateStatus: function (status) {
+                return status >= 200 && status < 500;
+            }
         });
         
-        if (response.data.status === 'success') {
-            await storeUserSession(response.data.data);
-            setAuthToken(response.data.data.token);
+        console.log('Login response status:', response.status);
+        console.log('Login response data:', response.data);
+        
+        if (response.data.status === 'success' && response.data.data) {
+            const { data } = response.data;
+            
+            // Store user data with corrected field mappings
+            const userData = {
+                UserID: data.userId,
+                Username: data.username,
+                Email: data.email,
+                Role: data.role
+            };
+            
+            await AsyncStorage.setItem('user', JSON.stringify(userData));
+            
+            // Return success with the correct data structure
+            return {
+                status: 'success',
+                data: userData,
+                message: 'Login successful'
+            };
+        } else {
+            return {
+                status: 'error',
+                message: response.data.message || 'Invalid credentials'
+            };
         }
-        return response.data;
     } catch (error) {
-        console.error('Login error details:', error);
+        console.error('Login error:', error);
         return handleError(error);
     }
 };
@@ -90,7 +203,7 @@ export const googleLogin = async (googleUser) => {
 
 export const register = async (username, email, password, role = 'Asset Manager') => {
     try {
-        const response = await api.post('/register.php', { username, email, password, role });
+        const response = await api.post('/users/register.php', { username, email, password, role });
         return response.data;
     } catch (error) {
         console.error('Register error details:', error);
@@ -98,110 +211,391 @@ export const register = async (username, email, password, role = 'Asset Manager'
     }
 };
 
-// Asset Management APIs
-export const getAssets = async () => {
-    try {
-        const response = await api.get('/assets.php');
-        return response.data;
-    } catch (error) {
-        console.error('Get assets error details:', error);
-        return handleError(error);
-    }
-};
-
-export const getAssetById = async (assetId) => {
-    try {
-        const response = await api.get(`/assets.php?id=${assetId}`);
-        return response.data;
-    } catch (error) {
-        console.error('Get asset by id error details:', error);
-        return handleError(error);
-    }
-};
-
-export const createAsset = async (assetData) => {
-    try {
-        const response = await api.post('/assets.php', assetData);
-        return response.data;
-    } catch (error) {
-        console.error('Create asset error details:', error);
-        return handleError(error);
-    }
-};
-
-export const updateAsset = async (assetId, assetData) => {
-    try {
-        const response = await api.put('/assets.php', { assetId, ...assetData });
-        return response.data;
-    } catch (error) {
-        console.error('Update asset error details:', error);
-        return handleError(error);
-    }
-};
-
-export const deleteAsset = async (assetId) => {
-    try {
-        const response = await api.delete('/assets.php', { data: { assetId } });
-        return response.data;
-    } catch (error) {
-        console.error('Delete asset error details:', error);
-        return handleError(error);
-    }
-};
-
-// Add authentication token to requests
-export const setAuthToken = (token) => {
-    if (token) {
-        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    } else {
-        delete api.defaults.headers.common['Authorization'];
-    }
-};
-
-// Store user session
-export const storeUserSession = async (userData) => {
-    try {
-        await AsyncStorage.setItem('user', JSON.stringify(userData));
-    } catch (error) {
-        console.error('Error storing user session:', error);
-    }
-};
-
-// Get user session
-export const getUserSession = async () => {
-    try {
-        const userStr = await AsyncStorage.getItem('user');
-        return userStr ? JSON.parse(userStr) : null;
-    } catch (error) {
-        console.error('Error getting user session:', error);
-        return null;
-    }
-};
-
-// Clear user session
-export const clearUserSession = async () => {
-    try {
-        await AsyncStorage.removeItem('user');
-        setAuthToken(null);
-    } catch (error) {
-        console.error('Error clearing user session:', error);
-    }
-};
-
-export default {
-    // Auth
-    login,
-    googleLogin,
-    register,
-    setAuthToken,
-    storeUserSession,
-    getUserSession,
-    clearUserSession,
+// User Management APIs
+export const userService = {
+    getAll: async () => {
+        try {
+            const response = await api.get('users/read.php');
+            return response.data;
+        } catch (error) {
+            console.error('Get users error:', error);
+            return handleError(error);
+        }
+    },
     
-    // Assets
-    getAssets,
-    getAssetById,
-    createAsset,
-    updateAsset,
-    deleteAsset,
+    getById: async (userId) => {
+        try {
+            const response = await api.get(`users/read_one.php?id=${userId}`);
+            return response.data;
+        } catch (error) {
+            console.error('Get user error:', error);
+            return handleError(error);
+        }
+    },
+    
+    create: async (userData) => {
+        try {
+            const response = await api.post('users/create.php', userData);
+            return response.data;
+        } catch (error) {
+            console.error('Create user error:', error);
+            return handleError(error);
+        }
+    },
+    
+    update: async (userId, userData) => {
+        try {
+            const response = await api.put(`users/update.php?id=${userId}`, userData);
+            return response.data;
+        } catch (error) {
+            console.error('Update user error:', error);
+            return handleError(error);
+        }
+    },
+    
+    delete: async (userId) => {
+        try {
+            const response = await api.delete(`users/delete.php?id=${userId}`);
+        return response.data;
+    } catch (error) {
+            console.error('Delete user error:', error);
+        return handleError(error);
+        }
+    }
 };
+
+// Assets Management APIs
+export const assetService = {
+    getAll: async () => {
+        try {
+            const response = await axios.get(`${API_URL}/assets/read.php`);
+            return response.data;
+        } catch (error) {
+            console.error('Error in assetService.getAll:', error);
+            throw error;
+        }
+    },
+    
+    getById: async (assetId) => {
+        try {
+            const response = await api.get(`assets/read_one.php?id=${assetId}`);
+            return response.data;
+        } catch (error) {
+            console.error('Get asset error:', error);
+            return handleError(error);
+        }
+    },
+    
+    create: async (data) => {
+        try {
+            const response = await axios.post(`${API_URL}/assets/create.php`, data);
+            return response.data;
+        } catch (error) {
+            console.error('Error in assetService.create:', error);
+            throw error;
+        }
+    },
+    
+    update: async (assetId, assetData) => {
+        try {
+            const response = await api.put(`assets/update.php?id=${assetId}`, assetData);
+        return response.data;
+    } catch (error) {
+            console.error('Update asset error:', error);
+        return handleError(error);
+        }
+    },
+    
+    delete: async (id) => {
+        try {
+            const response = await api.post(ENDPOINTS.deleteAsset, { AssetID: id });
+            return response.data;
+        } catch (error) {
+            console.error('Delete asset error:', error);
+            throw error;
+        }
+    }
+};
+
+// Maintenance Teams APIs
+export const teamService = {
+    getAll: async () => {
+        try {
+            // Update path to match backend structure
+            const response = await api.get('teams/read.php');
+            console.log('Team service response:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Get teams error:', error);
+            if (error.response && error.response.status === 404) {
+                // Return empty array if no teams found
+                return { status: 'success', data: [] };
+            }
+            return handleError(error);
+        }
+    },
+    
+    getById: async (teamId) => {
+        try {
+            const response = await api.get(`teams/read_one.php?id=${teamId}`);
+            return response.data;
+        } catch (error) {
+            console.error('Get team error:', error);
+            return handleError(error);
+        }
+    },
+    
+    create: async (teamData) => {
+        try {
+            const response = await api.post('teams/create.php', teamData);
+            return response.data;
+        } catch (error) {
+            console.error('Create team error:', error);
+            return handleError(error);
+        }
+    },
+    
+    update: async (teamId, teamData) => {
+        try {
+            const response = await api.put(`teams/update.php?id=${teamId}`, teamData);
+            return response.data;
+        } catch (error) {
+            console.error('Update team error:', error);
+            return handleError(error);
+        }
+    },
+    
+    delete: async (id) => {
+        try {
+            const response = await api.post(ENDPOINTS.deleteTeam, { teamId: id });
+            if (response.data && response.data.status === 'success') {
+                return response.data;
+            } else {
+                throw new Error(response.data?.message || 'Failed to delete team');
+            }
+        } catch (error) {
+            if (error.response) {
+                console.error('Delete team error response:', error.response);
+                throw new Error(error.response.data?.message || 'Failed to delete team');
+            } else if (error.request) {
+                console.error('Delete team error request:', error.request);
+                throw new Error('Network error while deleting team');
+            } else {
+                console.error('Delete team error:', error);
+                throw error;
+            }
+        }
+    },
+
+    // Add test function to diagnose issues
+    testDelete: async (id) => {
+        try {
+            console.log('Testing delete with ID:', id);
+            
+            // Test the endpoint directly
+            const testResponse = await fetch(`${API_URL}test/team_delete_test.php?id=${id}`, {
+                method: 'GET'
+            });
+            
+            console.log('Test response status:', testResponse.status);
+            const testText = await testResponse.text();
+            console.log('Raw test response:', testText);
+            
+            let testResult;
+            try {
+                testResult = JSON.parse(testText);
+                console.log('Parsed test result:', testResult);
+            } catch (parseError) {
+                console.error('Test parse error:', parseError);
+                testResult = { status: 'error', message: 'Failed to parse test response' };
+            }
+            
+            return {
+                status: 'success',
+                message: 'Test completed, check console',
+                testResult
+            };
+        } catch (error) {
+            console.error('Test error:', error);
+            return {
+                status: 'error',
+                message: 'Test failed: ' + error.message
+            };
+        }
+    },
+
+    // Add method to get active teams count
+    getActiveCount: async () => {
+        try {
+            const response = await axios.get(`${API_URL}teams/read.php`);
+            return response.data.active_count || 0;
+        } catch (error) {
+            console.error('Get active teams count error:', error);
+            return 0;
+        }
+    },
+
+    // Add a simple delete method using the simplified endpoint
+    simpleDelete: async (id) => {
+        try {
+            console.log('Simple delete team with ID:', id);
+            
+            // Use URLSearchParams
+            const params = new URLSearchParams();
+            params.append('id', id);
+            
+            // Make request
+            const response = await fetch(`${API_URL}teams/delete_simple.php`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: params
+            });
+            
+            console.log('Simple delete response status:', response.status);
+            
+            // Get text response
+            const responseText = await response.text();
+            console.log('Simple delete raw response:', responseText);
+            
+            // Check if empty
+            if (!responseText || responseText.trim() === '') {
+                return {
+                    status: 'success',
+                    message: 'Team deleted (empty response)'
+                };
+            }
+            
+            // Try to parse JSON
+            try {
+                return JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('Simple delete parse error:', parseError);
+                return {
+                    status: response.ok ? 'success' : 'error',
+                    message: response.ok ? 'Team deleted (response not JSON)' : 'Failed to parse response'
+                };
+            }
+        } catch (error) {
+            console.error('Simple delete error:', error);
+            return {
+                status: 'error',
+                message: 'Network error: ' + error.message
+            };
+        }
+    },
+};
+
+// Maintenance Records APIs
+export const maintenanceService = {
+    getAll: async () => {
+        try {
+            const response = await api.get('maintenance_records/read.php');
+            return response.data;
+        } catch (error) {
+            console.error('Get maintenance records error:', error);
+            return handleError(error);
+        }
+    },
+    
+    getById: async (maintenanceId) => {
+        try {
+            const response = await api.get(`maintenance_records/read_one.php?id=${maintenanceId}`);
+            return response.data;
+        } catch (error) {
+            console.error('Get maintenance record error:', error);
+            return handleError(error);
+        }
+    },
+    
+    create: async (maintenanceData) => {
+        try {
+            const response = await api.post('maintenance_records/create.php', maintenanceData);
+            return response.data;
+        } catch (error) {
+            console.error('Create maintenance record error:', error);
+            return handleError(error);
+        }
+    },
+    
+    update: async (maintenanceId, maintenanceData) => {
+        try {
+            const response = await api.put(`maintenance_records/update.php?id=${maintenanceId}`, maintenanceData);
+            return response.data;
+        } catch (error) {
+            console.error('Update maintenance record error:', error);
+            return handleError(error);
+        }
+    },
+    
+    delete: async (id) => {
+        try {
+            const response = await api.post(ENDPOINTS.deleteMaintenance, JSON.stringify({ id }), {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            return { status: 'success', message: 'Maintenance record deleted successfully' };
+        } catch (error) {
+            console.error('Delete maintenance error:', error);
+            return { status: 'error', message: 'Failed to delete maintenance record' };
+        }
+    }
+};
+
+// Reports APIs
+export const reportService = {
+    getAll: async () => {
+        try {
+            const response = await api.get(ENDPOINTS.reports);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching reports:', error);
+            throw error;
+        }
+    },
+    
+    getById: async (reportId) => {
+        try {
+            const response = await api.get(`${ENDPOINTS.reports}?id=${reportId}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching report:', error);
+            throw error;
+        }
+    },
+    
+    create: async (reportData) => {
+        try {
+            const response = await api.post(ENDPOINTS.createReport, reportData);
+            return response.data;
+        } catch (error) {
+            console.error('Error creating report:', error);
+            throw error;
+        }
+    },
+
+    generate: async (reportData) => {
+        try {
+            const response = await api.post(ENDPOINTS.generateReport, {
+                title: reportData.title,
+                description: reportData.description,
+                reportType: reportData.type,
+                startDate: reportData.startDate,
+                endDate: reportData.endDate,
+                status: 'Pending'
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error generating report:', error);
+            if (error.response) {
+                throw new Error(error.response.data?.message || 'Failed to generate report');
+            }
+            throw error;
+        }
+    }
+};
+
+// Export default api for direct axios usage
+export default api;

@@ -1,52 +1,300 @@
 // Import necessary dependencies
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
+import { useColorScheme, StyleSheet, View, SafeAreaView, StatusBar } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { StatusBar } from 'react-native';
-import { StyleSheet, Text, View, SafeAreaView } from 'react-native';
+import { lightColors, darkColors } from './src/theme/colors';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL } from './src/config/api';
 
 // Import screen components
 import LoginScreen from './src/screens/LoginScreen';
+import SignupScreen from './src/screens/SignupScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import WelcomeScreen from './src/screens/WelcomeScreen';
+import MaintenanceTeamsScreen from './src/screens/MaintenanceTeamsScreen';
+import MaintenanceRecordsScreen from './src/screens/MaintenanceRecordsScreen';
+import MaintenanceSchedulesScreen from './src/screens/MaintenanceSchedulesScreen';
+import AddTeamScreen from './src/screens/AddTeamScreen';
+import AddRecordScreen from './src/screens/AddRecordScreen';
+import AssetsScreen from './src/screens/AssetsScreen';
+import AddAssetScreen from './src/screens/AddAssetScreen';
+import ReportsScreen from './src/screens/ReportsScreen';
+import GenerateReport from './src/screens/GenerateReport';
+import ViewReport from './src/screens/ViewReport';
+import SettingsScreen from './src/screens/SettingsScreen';
+import EditProfile from './src/screens/EditProfile';
+import ChangePassword from './src/screens/ChangePassword';
+import MaintenanceScreen from './src/screens/MaintenanceScreen';
+import AddScheduleScreen from './src/screens/AddScheduleScreen';
+import TeamsScreen from './src/screens/TeamsScreen';
+import EditTeamScreen from './src/screens/EditTeamScreen';
+import ApiTestScreen from './src/screens/ApiTestScreen';
 
 // Create a stack navigator
 const Stack = createStackNavigator();
 
-// Main App component
-export default function App() {
-  return (
-    <NavigationContainer>
-      {/* Set status bar color to dark blue and ensure it covers the notch */}
-      <StatusBar
-        translucent
-        backgroundColor="transparent"
-        barStyle="dark-content"
-      />
-      <SafeAreaView style={{ flex: 1 }}>
-        {/* Stack Navigator configuration */}
-        <Stack.Navigator 
-          initialRouteName="Welcome"
-          screenOptions={{
-            headerShown: false,
-          }}
-        >
-          {/* Define screen routes */}
-          <Stack.Screen name="Welcome" component={WelcomeScreen} />
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Dashboard" component={DashboardScreen} />
-        </Stack.Navigator>
-      </SafeAreaView>
-    </NavigationContainer>
-  );
-}
+const AppNavigator = () => {
+  const [initialRoute, setInitialRoute] = useState('Login');
+  const [isLoading, setIsLoading] = useState(true);
 
-// Unused styles
+  useEffect(() => {
+    checkAuthState();
+  }, []);
+
+  const checkAuthState = async () => {
+    try {
+      const userData = await AsyncStorage.getItem('user');
+      const hasLaunched = await AsyncStorage.getItem('hasLaunched');
+      
+      if (userData) {
+        setInitialRoute('Dashboard');
+      } else if (!hasLaunched) {
+        setInitialRoute('Welcome');
+      } else {
+        setInitialRoute('Login');
+      }
+    } catch (error) {
+      console.error('Error checking auth state:', error);
+      setInitialRoute('Login');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return null;
+  }
+
+  return (
+    <Stack.Navigator
+      initialRouteName={initialRoute}
+      screenOptions={{
+        headerShown: false
+      }}
+    >
+      <Stack.Screen name="Welcome" component={WelcomeScreen} />
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Dashboard" component={DashboardScreen} />
+      <Stack.Screen 
+        name="Signup" 
+        component={SignupScreen} 
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="MaintenanceTeams" 
+        component={MaintenanceTeamsScreen}
+        options={{
+          title: 'Maintenance Teams',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen 
+        name="Teams" 
+        component={TeamsScreen}
+        options={{
+          title: 'Maintenance Teams',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen 
+        name="AddTeam" 
+        component={AddTeamScreen}
+        options={{
+          title: 'Add New Team',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen 
+        name="EditTeam" 
+        component={EditTeamScreen}
+        options={{
+          title: 'Edit Team',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen 
+        name="MaintenanceRecords" 
+        component={MaintenanceRecordsScreen}
+        options={{
+          title: 'Maintenance Records',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen 
+        name="MaintenanceSchedules" 
+        component={MaintenanceSchedulesScreen}
+        options={{
+          title: 'Maintenance Schedules',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen 
+        name="AddRecord" 
+        component={AddRecordScreen}
+        options={{
+          title: 'Add Maintenance Record',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen 
+        name="Assets" 
+        component={AssetsScreen}
+        options={{
+          title: 'Assets',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen 
+        name="AddAsset" 
+        component={AddAssetScreen}
+        options={{
+          title: 'Add New Asset',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen 
+        name="Reports" 
+        component={ReportsScreen}
+        options={{
+          title: 'Reports',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen 
+        name="GenerateReport" 
+        component={GenerateReport}
+        options={{
+          title: 'Generate Report',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen 
+        name="ViewReport" 
+        component={ViewReport}
+        options={{
+          title: 'View Report',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen 
+        name="Settings" 
+        component={SettingsScreen}
+        options={{
+          title: 'Settings',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen 
+        name="EditProfile" 
+        component={EditProfile}
+        options={{
+          title: 'Edit Profile',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen 
+        name="ChangePassword" 
+        component={ChangePassword}
+        options={{
+          title: 'Change Password',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen 
+        name="Maintenance" 
+        component={MaintenanceScreen}
+        options={{
+          title: 'Maintenance',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen 
+        name="AddSchedule" 
+        component={AddScheduleScreen}
+        options={{
+          title: 'Add Maintenance Schedule',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen 
+        name="ApiTest" 
+        component={ApiTestScreen}
+        options={{
+          title: 'API Connection Test',
+          headerShown: true,
+        }}
+      />
+    </Stack.Navigator>
+  );
+};
+
+const App = () => {
+  const colorScheme = useColorScheme();
+  const [isFirstLaunch, setIsFirstLaunch] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    checkFirstLaunch();
+    checkAuthState();
+  }, []);
+
+  const checkAuthState = async () => {
+    try {
+      const userData = await AsyncStorage.getItem('user');
+      setIsAuthenticated(!!userData);
+    } catch (error) {
+      console.error('Error checking auth state:', error);
+    }
+  };
+
+  const checkFirstLaunch = async () => {
+    try {
+      const hasLaunched = await AsyncStorage.getItem('hasLaunched');
+      if (hasLaunched === null) {
+        setIsFirstLaunch(true);
+        await AsyncStorage.setItem('hasLaunched', 'true');
+      } else {
+        setIsFirstLaunch(false);
+      }
+    } catch (error) {
+      console.error('Error checking first launch:', error);
+      setIsFirstLaunch(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return null;
+  }
+
+  const theme = colorScheme === 'dark' ? {
+    ...DarkTheme,
+    colors: darkColors,
+  } : {
+    ...DefaultTheme,
+    colors: lightColors,
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar
+        barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'}
+        backgroundColor={theme.colors.background}
+      />
+      <NavigationContainer theme={theme}>
+        <AppNavigator />
+      </NavigationContainer>
+    </SafeAreaView>
+  );
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });
+
+export default App;

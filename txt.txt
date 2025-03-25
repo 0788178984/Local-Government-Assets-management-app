@@ -1,0 +1,4 @@
+a single backend function to handle API connections to your PHP backend with MySQL, instead of writing API calls separately in multiple files with a single API service file in your React Native project..,No need to rewrite Axios code in every component.Easy maintenance, Reusable functions  iclude cruds
+) ,why dont you include the cruds
+
+
