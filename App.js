@@ -17,8 +17,10 @@ import MaintenanceRecordsScreen from './src/screens/MaintenanceRecordsScreen';
 import MaintenanceSchedulesScreen from './src/screens/MaintenanceSchedulesScreen';
 import AddTeamScreen from './src/screens/AddTeamScreen';
 import AddRecordScreen from './src/screens/AddRecordScreen';
+import AddMaintenance from './src/screens/AddMaintenance';
 import AssetsScreen from './src/screens/AssetsScreen';
 import AddAssetScreen from './src/screens/AddAssetScreen';
+import EditAssetScreen from './src/screens/EditAssetScreen';
 import ReportsScreen from './src/screens/ReportsScreen';
 import GenerateReport from './src/screens/GenerateReport';
 import ViewReport from './src/screens/ViewReport';
@@ -35,7 +37,7 @@ import ApiTestScreen from './src/screens/ApiTestScreen';
 const Stack = createStackNavigator();
 
 const AppNavigator = () => {
-  const [initialRoute, setInitialRoute] = useState('Login');
+  const [initialRoute, setInitialRoute] = useState('Welcome');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -44,19 +46,25 @@ const AppNavigator = () => {
 
   const checkAuthState = async () => {
     try {
-      const userData = await AsyncStorage.getItem('user');
+      // Always set Welcome as initial screen for first-time users
       const hasLaunched = await AsyncStorage.getItem('hasLaunched');
       
-      if (userData) {
-        setInitialRoute('Dashboard');
-      } else if (!hasLaunched) {
+      if (!hasLaunched) {
         setInitialRoute('Welcome');
+        // Set hasLaunched flag for future app launches
+        await AsyncStorage.setItem('hasLaunched', 'true');
       } else {
-        setInitialRoute('Login');
+        // For subsequent launches, check if user is logged in
+        const userData = await AsyncStorage.getItem('user');
+        if (userData) {
+          setInitialRoute('Dashboard');
+        } else {
+          setInitialRoute('Login');
+        }
       }
     } catch (error) {
       console.error('Error checking auth state:', error);
-      setInitialRoute('Login');
+      setInitialRoute('Welcome');
     } finally {
       setIsLoading(false);
     }
@@ -130,6 +138,14 @@ const AppNavigator = () => {
         }}
       />
       <Stack.Screen 
+        name="AddMaintenance" 
+        component={AddMaintenance}
+        options={{
+          title: 'Add Maintenance Record',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen 
         name="AddRecord" 
         component={AddRecordScreen}
         options={{
@@ -150,6 +166,14 @@ const AppNavigator = () => {
         component={AddAssetScreen}
         options={{
           title: 'Add New Asset',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen 
+        name="EditAsset" 
+        component={EditAssetScreen}
+        options={{
+          title: 'Edit Asset',
           headerShown: true,
         }}
       />

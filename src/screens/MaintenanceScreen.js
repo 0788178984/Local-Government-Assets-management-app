@@ -17,12 +17,6 @@ const MaintenanceScreen = ({ navigation }) => {
 
   const maintenanceOptions = [
     {
-      title: 'Upcoming Maintenance',
-      icon: 'event',
-      screen: 'MaintenanceSchedules',
-      description: 'List of assets with upcoming maintenance schedules'
-    },
-    {
       title: 'Maintenance Records',
       icon: 'assignment',
       screen: 'MaintenanceRecords',
@@ -32,7 +26,7 @@ const MaintenanceScreen = ({ navigation }) => {
       title: 'Maintenance Schedules',
       icon: 'schedule',
       screen: 'MaintenanceSchedules',
-      description: 'Manage maintenance schedules'
+      description: 'Manage asset maintenance schedules and see upcoming maintenance'
     }
   ];
 
