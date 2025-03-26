@@ -5,7 +5,7 @@ import Constants from 'expo-constants';
 import config from '../config/config';
 
 // Get API URL from config - ensure we use the correct IP address
-export const API_URL = 'http://10.20.1.155/LocalGovtAssetMgt_App/backend/api/';
+export const API_URL = 'http://192.168.43.91/LocalGovtAssetMgt_App/backend/api/';
 
 // Create axios instance
 const api = axios.create({
@@ -25,14 +25,16 @@ export const ENDPOINTS = {
     createAsset: 'assets/create.php',
     teams: 'teams/read.php',
     createTeam: 'teams/create.php',
-    maintenance: 'maintenance_records/read.php',
-    createMaintenance: 'maintenance_records/create.php',
+    maintenance: 'maintenance/read.php',
+    createMaintenance: 'maintenance/create.php',
+    schedules: 'schedules/read.php',
+    createSchedule: 'schedules/create.php',
     reports: 'reports/read.php',
     createReport: 'reports/create.php',
     generateReport: 'reports/generate.php',
     deleteAsset: 'assets/delete.php',
     deleteTeam: 'teams/delete.php',
-    deleteMaintenance: 'maintenance_records/delete.php'
+    deleteMaintenance: 'maintenance/delete.php'
 };
 
 // Add auth token interceptor
@@ -117,16 +119,21 @@ const handleError = (error) => {
 export const login = async (email, password) => {
     try {
         const loginUrl = ENDPOINTS.login;
-        console.log('Login URL:', `${API_URL}${loginUrl}`);
+        // Use the updated API_URL directly to ensure we're using the new IP
+        const fullLoginUrl = `${API_URL}${loginUrl}`;
+        console.log('Login URL:', fullLoginUrl);
+        
+        // Ensure we're using the most current API URL for login
+        const currentAPIUrl = API_URL;
         
         // Check if server is reachable
         try {
-            await fetch(`${API_URL}ping.php`);
+            await fetch(`${currentAPIUrl}ping.php`);
         } catch (networkError) {
             console.error('Server not reachable:', networkError);
             return {
                 status: 'error',
-                message: `Server not reachable at ${API_URL}. Please check your connection and server status.`
+                message: `Server not reachable at ${currentAPIUrl}. Please check your connection and server status.`
             };
         }
         
@@ -137,6 +144,10 @@ export const login = async (email, password) => {
         };
         
         console.log('Sending login data:', loginData);
+        console.log('Available API URLs:', {
+            'ip': config.API_URL_IP,
+            'localhost': config.API_URL
+        });
         
         const response = await api.post(loginUrl, loginData, {
             headers: {
@@ -491,7 +502,7 @@ export const teamService = {
 export const maintenanceService = {
     getAll: async () => {
         try {
-            const response = await api.get('maintenance_records/read.php');
+            const response = await api.get(ENDPOINTS.maintenance);
             return response.data;
         } catch (error) {
             console.error('Get maintenance records error:', error);
@@ -501,7 +512,7 @@ export const maintenanceService = {
     
     getById: async (maintenanceId) => {
         try {
-            const response = await api.get(`maintenance_records/read_one.php?id=${maintenanceId}`);
+            const response = await api.get(`maintenance/read_one.php?id=${maintenanceId}`);
             return response.data;
         } catch (error) {
             console.error('Get maintenance record error:', error);
@@ -511,7 +522,7 @@ export const maintenanceService = {
     
     create: async (maintenanceData) => {
         try {
-            const response = await api.post('maintenance_records/create.php', maintenanceData);
+            const response = await api.post(ENDPOINTS.createMaintenance, maintenanceData);
             return response.data;
         } catch (error) {
             console.error('Create maintenance record error:', error);
@@ -521,7 +532,21 @@ export const maintenanceService = {
     
     update: async (maintenanceId, maintenanceData) => {
         try {
-            const response = await api.put(`maintenance_records/update.php?id=${maintenanceId}`, maintenanceData);
+            // Transform the data to match the backend API expectations
+            const transformedData = {
+                maintenanceId: maintenanceId,
+                maintenanceType: maintenanceData.MaintenanceType,
+                description: maintenanceData.Description || '',
+                cost: maintenanceData.Cost || '0',
+                maintenanceStatus: maintenanceData.MaintenanceStatus || 'Pending',
+                maintenanceProvider: maintenanceData.MaintenanceProvider || '',
+                teamId: maintenanceData.TeamID || maintenanceData.TeamId || null,
+                maintenanceDate: maintenanceData.MaintenanceDate || null
+            };
+            
+            console.log('Sending maintenance update with data:', transformedData);
+            
+            const response = await api.put(`maintenance/update.php`, transformedData);
             return response.data;
         } catch (error) {
             console.error('Update maintenance record error:', error);
@@ -531,15 +556,11 @@ export const maintenanceService = {
     
     delete: async (id) => {
         try {
-            const response = await api.post(ENDPOINTS.deleteMaintenance, JSON.stringify({ id }), {
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            return { status: 'success', message: 'Maintenance record deleted successfully' };
+            const response = await api.post(ENDPOINTS.deleteMaintenance, { id });
+            return response.data;
         } catch (error) {
             console.error('Delete maintenance error:', error);
-            return { status: 'error', message: 'Failed to delete maintenance record' };
+            return handleError(error);
         }
     }
 };
@@ -595,6 +616,48 @@ export const reportService = {
             throw error;
         }
     }
+};
+
+// User session and profile management
+export const getUserSession = async () => {
+  try {
+    const userStr = await AsyncStorage.getItem('user');
+    if (!userStr) {
+      return null;
+    }
+    return JSON.parse(userStr);
+  } catch (error) {
+    console.error('Error getting user session:', error);
+    throw error;
+  }
+};
+
+export const updateUserProfile = async (profileData) => {
+  try {
+    const userData = await getUserSession();
+    if (!userData || !userData.UserID) {
+      throw new Error('User not authenticated');
+    }
+    
+    // Ensure we have the UserID in the request
+    const requestData = {
+      ...profileData,
+      UserID: userData.UserID
+    };
+    
+    const response = await api.post('users/update_profile.php', requestData);
+    
+    if (response.data.status === 'success') {
+      // Update the local storage with the new profile data
+      const updatedUserData = { ...userData, ...profileData };
+      await AsyncStorage.setItem('user', JSON.stringify(updatedUserData));
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    return handleError(error);
+  }
 };
 
 // Export default api for direct axios usage

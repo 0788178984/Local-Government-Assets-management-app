@@ -23,17 +23,19 @@ try {
     $db = $database->getConnection();
     logDebug("Database connection established");
 
-    // Query that matches the actual MaintenanceSchedules table structure
+    // Query that matches the actual maintenanceschedules table structure
     $query = "SELECT 
         ms.ScheduleID,
         ms.AssetID,
         a.AssetName,
+        a.Location as AssetLocation,
         ms.ScheduleType,
         ms.Frequency,
         ms.NextDueDate,
+        ms.Description,
         ms.LastCompletedDate
-    FROM MaintenanceSchedules ms
-    LEFT JOIN Assets a ON ms.AssetID = a.AssetID
+    FROM maintenanceschedules ms
+    LEFT JOIN assets a ON ms.AssetID = a.AssetID
     ORDER BY ms.NextDueDate ASC";
 
     logDebug("Executing query: " . $query);

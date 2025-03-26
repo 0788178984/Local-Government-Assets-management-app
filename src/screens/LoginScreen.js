@@ -31,6 +31,10 @@ const LoginScreen = ({ navigation }) => {
     }
 
     try {
+      // Clear any stored API URLs or cached data
+      await AsyncStorage.removeItem('apiUrl');
+      await AsyncStorage.removeItem('lastIpAddress');
+      
       setIsLoading(true);
       console.log('Attempting login with:', { email, password });
       const response = await login(email, password);

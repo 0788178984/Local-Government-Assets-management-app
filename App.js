@@ -15,6 +15,7 @@ import WelcomeScreen from './src/screens/WelcomeScreen';
 import MaintenanceTeamsScreen from './src/screens/MaintenanceTeamsScreen';
 import MaintenanceRecordsScreen from './src/screens/MaintenanceRecordsScreen';
 import MaintenanceSchedulesScreen from './src/screens/MaintenanceSchedulesScreen';
+import MaintenanceDetails from './src/screens/MaintenanceDetails';
 import AddTeamScreen from './src/screens/AddTeamScreen';
 import AddRecordScreen from './src/screens/AddRecordScreen';
 import AddScheduleScreen from './src/screens/AddScheduleScreen';
@@ -31,6 +32,7 @@ import MaintenanceScreen from './src/screens/MaintenanceScreen';
 import TeamsScreen from './src/screens/TeamsScreen';
 import EditTeamScreen from './src/screens/EditTeamScreen';
 import ApiTestScreen from './src/screens/ApiTestScreen';
+import ScheduleDetails from './src/screens/ScheduleDetails';
 
 // Create a stack navigator
 const Stack = createStackNavigator();
@@ -237,6 +239,22 @@ const AppNavigator = () => {
         component={ApiTestScreen}
         options={{
           title: 'API Connection Test',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen 
+        name="MaintenanceDetails" 
+        component={MaintenanceDetails}
+        options={{
+          title: 'Maintenance Details',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen 
+        name="ScheduleDetails" 
+        component={ScheduleDetails}
+        options={{
+          title: 'Schedule Details',
           headerShown: true,
         }}
       />

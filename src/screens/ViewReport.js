@@ -14,23 +14,34 @@ import { reportService } from '../services/api';
 import { lightColors, darkColors } from '../theme/colors';
 
 const ViewReport = ({ route, navigation }) => {
-  const reportId = route.params?.reportId;
+  const reportData = route.params?.report;
+  const reportId = reportData?.id || route.params?.reportId;
   const isDarkMode = useColorScheme() === 'dark';
   const colors = isDarkMode ? darkColors : lightColors;
 
-  const [report, setReport] = useState(null);
+  const [report, setReport] = useState(reportData || null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedReport, setEditedReport] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!reportData);
 
   useEffect(() => {
-    if (!reportId) {
+    console.log('Report data from navigation:', reportData);
+    if (!reportId && !reportData) {
       Alert.alert('Error', 'No report ID provided');
       navigation.goBack();
       return;
     }
-    fetchReport();
-  }, [reportId]);
+    
+    // If we already have the report data from navigation params, use it
+    if (reportData) {
+      setReport(reportData);
+      setEditedReport(reportData);
+      setIsLoading(false);
+    } else {
+      // Otherwise fetch it using the ID
+      fetchReport();
+    }
+  }, [reportId, reportData]);
 
   const fetchReport = async () => {
     try {
@@ -78,11 +89,32 @@ const ViewReport = ({ route, navigation }) => {
     );
   }
 
+  // Check if we have the necessary data to display
+  if (!report) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Text style={[styles.text, { color: colors.text }]}>Report data not available</Text>
+        <TouchableOpacity
+          style={[styles.saveButton, { backgroundColor: colors.primary }]}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.saveButtonText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // Check for the expected properties
+  const reportTitle = report.ReportTitle || report.reportTitle || 'Untitled Report';
+  const reportType = report.ReportType || report.reportType || 'Not specified';
+  const generatedDate = report.GeneratedDate || report.generatedDate || new Date().toISOString();
+  const reportContent = report.ReportContent || report.reportContent || report.description || '';
+
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>
-          {report.ReportTitle}
+          {reportTitle}
         </Text>
         <TouchableOpacity 
           style={styles.editButton}
@@ -98,11 +130,11 @@ const ViewReport = ({ route, navigation }) => {
 
       <View style={styles.infoContainer}>
         <Text style={[styles.label, { color: colors.text }]}>Report Type</Text>
-        <Text style={[styles.text, { color: colors.text }]}>{report.ReportType}</Text>
+        <Text style={[styles.text, { color: colors.text }]}>{reportType}</Text>
 
         <Text style={[styles.label, { color: colors.text }]}>Generated Date</Text>
         <Text style={[styles.text, { color: colors.text }]}>
-          {new Date(report.GeneratedDate).toLocaleDateString()}
+          {new Date(generatedDate).toLocaleDateString()}
         </Text>
 
         <Text style={[styles.label, { color: colors.text }]}>Content</Text>
@@ -113,7 +145,7 @@ const ViewReport = ({ route, navigation }) => {
               color: colors.text,
               borderColor: colors.border 
             }]}
-            value={editedReport.ReportContent}
+            value={editedReport.ReportContent || editedReport.reportContent || editedReport.description || ''}
             onChangeText={(text) => setEditedReport({
               ...editedReport,
               ReportContent: text
@@ -123,7 +155,7 @@ const ViewReport = ({ route, navigation }) => {
           />
         ) : (
           <Text style={[styles.content, { color: colors.text }]}>
-            {report.ReportContent}
+            {reportContent}
           </Text>
         )}
       </View>
@@ -195,4 +227,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ViewReport; 
+export default ViewReport;

@@ -8,7 +8,10 @@ class MaintenanceService {
             console.log('Maintenance response:', response.data);
             
             if (response.data && response.data.status === 'success') {
-                return response.data;
+                return {
+                    status: 'success',
+                    data: response.data
+                };
             } else if (response.data && Array.isArray(response.data)) {
                 return {
                     status: 'success',
@@ -33,7 +36,7 @@ class MaintenanceService {
 
     async getMaintenanceById(id) {
         try {
-            const response = await api.get(`${ENDPOINTS.maintenance}?id=${id}`);
+            const response = await api.get(`${ENDPOINTS.maintenance.replace('read.php', 'read_one.php')}?id=${id}`);
             return response.data;
         } catch (error) {
             console.error(`Failed to fetch maintenance record ${id}:`, error);
@@ -44,7 +47,7 @@ class MaintenanceService {
     async createMaintenance(data) {
         try {
             console.log('Creating maintenance record:', data);
-            const response = await api.post(ENDPOINTS.maintenance.replace('read.php', 'create.php'), data);
+            const response = await api.post(ENDPOINTS.createMaintenance, data);
             return response.data;
         } catch (error) {
             console.error('Failed to create maintenance record:', error);
@@ -54,7 +57,7 @@ class MaintenanceService {
 
     async updateMaintenance(id, data) {
         try {
-            const response = await api.put(ENDPOINTS.maintenance.replace('read.php', 'update.php'), {
+            const response = await api.put(`${ENDPOINTS.maintenance.replace('read.php', 'update.php')}`, {
                 MaintenanceID: id,
                 ...data
             });
@@ -67,8 +70,8 @@ class MaintenanceService {
 
     async deleteMaintenance(id) {
         try {
-            const response = await api.delete(ENDPOINTS.maintenance.replace('read.php', 'delete.php'), {
-                data: { MaintenanceID: id }
+            const response = await api.post(ENDPOINTS.deleteMaintenance, {
+                MaintenanceID: id
             });
             return response.data;
         } catch (error) {
@@ -78,4 +81,4 @@ class MaintenanceService {
     }
 }
 
-export default new MaintenanceService(); 
+export default new MaintenanceService();

@@ -1,8 +1,8 @@
 // API Configuration
 const config = {
     // API URLs - updated for physical device testing
-    API_URL: 'http://10.20.1.155/LocalGovtAssetMgt_App/backend/api/',
-    API_URL_IP: 'http://10.20.1.155/LocalGovtAssetMgt_App/backend/api/',
+    API_URL: 'http://192.168.43.91/LocalGovtAssetMgt_App/backend/api/',
+    API_URL_IP: 'http://192.168.43.91/LocalGovtAssetMgt_App/backend/api/',
     
     // API Timeouts
     TIMEOUT: 15000, // 15 seconds

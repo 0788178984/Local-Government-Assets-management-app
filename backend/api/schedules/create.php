@@ -39,13 +39,13 @@ try {
         logDebug("All required fields are present");
         
         // Check if the table exists, if not create it
-        $checkTable = "SHOW TABLES LIKE 'MaintenanceSchedules'";
+        $checkTable = "SHOW TABLES LIKE 'maintenanceschedules'";
         $result = $db->query($checkTable);
         
         if ($result->rowCount() == 0) {
-            logDebug("MaintenanceSchedules table does not exist, creating it...");
+            logDebug("maintenanceschedules table does not exist, creating it...");
             
-            $createTable = "CREATE TABLE IF NOT EXISTS MaintenanceSchedules (
+            $createTable = "CREATE TABLE IF NOT EXISTS maintenanceschedules (
                 ScheduleID INT(11) NOT NULL AUTO_INCREMENT,
                 AssetID INT(11) NOT NULL,
                 ScheduleType VARCHAR(50) NOT NULL,
@@ -53,16 +53,15 @@ try {
                 NextDueDate DATE NOT NULL,
                 Description TEXT NULL,
                 LastCompletedDate DATE NULL,
-                PRIMARY KEY (ScheduleID),
-                FOREIGN KEY (AssetID) REFERENCES Assets(AssetID) ON DELETE CASCADE
+                PRIMARY KEY (ScheduleID)
             )";
             
             $db->exec($createTable);
-            logDebug("MaintenanceSchedules table created successfully");
+            logDebug("maintenanceschedules table created successfully");
         }
         
         // Using the exact table structure from the database schema
-        $query = "INSERT INTO MaintenanceSchedules 
+        $query = "INSERT INTO maintenanceschedules 
                   (AssetID, ScheduleType, Frequency, NextDueDate, Description, LastCompletedDate) 
                   VALUES 
                   (:assetId, :scheduleType, :frequency, :nextDueDate, :description, NULL)";

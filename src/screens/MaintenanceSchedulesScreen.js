@@ -13,6 +13,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { lightColors, darkColors } from '../theme/colors';
 import API_CONFIG from '../config/api';
+import { CommonActions } from '@react-navigation/native';
 
 const MaintenanceSchedulesScreen = ({ navigation }) => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -83,10 +84,21 @@ const MaintenanceSchedulesScreen = ({ navigation }) => {
     return colors.success; // Due later
   };
 
+  // Navigate to schedule details with proper navigation action
+  const navigateToScheduleDetails = (schedule) => {
+    console.log('Navigating to schedule details:', schedule);
+    navigation.dispatch(
+      CommonActions.navigate({
+        name: 'ScheduleDetails',
+        params: { schedule },
+      })
+    );
+  };
+
   const renderScheduleItem = ({ item }) => (
     <TouchableOpacity 
       style={[styles.card, { backgroundColor: colors.card }]}
-      onPress={() => navigation.navigate('ScheduleDetails', { schedule: item })}
+      onPress={() => navigateToScheduleDetails(item)}
     >
       <View style={styles.cardHeader}>
         <Text style={[styles.assetName, { color: colors.text }]}>{item.AssetName}</Text>

@@ -62,7 +62,12 @@ const DashboardScreen = ({ navigation, route }) => {
     fairCondition: 0,
     poorCondition: 0,
     maintenanceCount: 0,
-    reportCount: 0
+    reportCount: 0,
+    maintenanceStatus: {
+      pending: 0,
+      inProgress: 0,
+      completed: 0
+    }
   });
 
   const colorScheme = useColorScheme();
@@ -270,7 +275,7 @@ const DashboardScreen = ({ navigation, route }) => {
       icon: 'build',
       title: 'Maintenance',
       count: summaryData.maintenanceCount,
-      subtitle: `${summaryData.maintenanceCount} Records`,
+      subtitle: `${summaryData.maintenanceStatus?.pending || 0} Pending, ${summaryData.maintenanceStatus?.inProgress || 0} In Progress, ${summaryData.maintenanceStatus?.completed || 0} Completed`,
       color: '#b71c1c',
       screen: 'Maintenance'
     },

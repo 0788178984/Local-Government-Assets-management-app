@@ -1,15 +1,15 @@
 // API Configuration
 export const API_CONFIG = {
     // Primary API URL for physical device testing
-    PRIMARY_URL: 'http://10.20.1.155/LocalGovtAssetMgt_App/backend/api',
+    PRIMARY_URL: 'http://192.168.43.91/LocalGovtAssetMgt_App/backend/api',
     
     // Alternate URL if primary fails
-    ALTERNATE_URL: 'http://10.20.1.155/LocalGovtAssetMgt_App/backend/api',
+    ALTERNATE_URL: 'http://192.168.43.91/LocalGovtAssetMgt_App/backend/api',
     
     // Additional URLs
     URLS: {
         LOCAL: 'http://localhost/LocalGovtAssetMgt_App/backend/api',
-        IP: 'http://10.20.1.155/LocalGovtAssetMgt_App/backend/api'
+        IP: 'http://192.168.43.91/LocalGovtAssetMgt_App/backend/api'
     },
     
     // Timeout in milliseconds

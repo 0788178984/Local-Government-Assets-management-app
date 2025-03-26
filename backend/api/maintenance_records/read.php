@@ -26,9 +26,9 @@ try {
                 m.Cost,
                 a.MaintenanceStatus as AssetCondition,
                 a.Location
-              FROM MaintenanceRecords m
-              LEFT JOIN Assets a ON m.AssetID = a.AssetID
-              LEFT JOIN MaintenanceTeams t ON m.TeamID = t.TeamID
+              FROM maintenancerecords m
+              LEFT JOIN assets a ON m.AssetID = a.AssetID
+              LEFT JOIN maintenanceteams t ON m.TeamID = t.TeamID
               ORDER BY m.MaintenanceDate DESC";
 
     $stmt = $db->prepare($query);
@@ -60,7 +60,7 @@ try {
                     SUM(CASE WHEN MaintenanceStatus = 'Completed' THEN 1 ELSE 0 END) as completed,
                     SUM(CASE WHEN MaintenanceStatus = 'In Progress' THEN 1 ELSE 0 END) as in_progress,
                     SUM(CASE WHEN MaintenanceStatus = 'Pending' THEN 1 ELSE 0 END) as pending
-                   FROM MaintenanceRecords";
+                   FROM maintenancerecords";
     $countStmt = $db->prepare($countQuery);
     $countStmt->execute();
     $counts = $countStmt->fetch(PDO::FETCH_ASSOC);
@@ -85,4 +85,4 @@ try {
         "message" => "Failed to retrieve maintenance records: " . $e->getMessage()
     ));
 }
-?> 
+?>

@@ -148,7 +148,7 @@ const ReportsScreen = ({ navigation }) => {
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={[styles.card, { backgroundColor: colors.cardBackground }]}
-      onPress={() => navigation.navigate('ReportDetail', { report: item })}
+      onPress={() => navigation.navigate('ViewReport', { report: item })}
     >
       <View style={styles.cardHeader}>
         <Text style={[styles.assetName, { color: colors.text }]}>{item.assetName}</Text>

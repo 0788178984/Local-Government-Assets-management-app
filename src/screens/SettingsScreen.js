@@ -115,7 +115,7 @@ const SettingsScreen = ({ navigation }) => {
             {user?.ProfilePhoto ? (
               <Image
                 source={{ 
-                  uri: `http://10.20.1.155/LocalGovtAssetMgt_App/backend/uploads/${user.ProfilePhoto}` 
+                  uri: `http://192.168.43.91/LocalGovtAssetMgt_App/backend/uploads/${user.ProfilePhoto}` 
                 }}
                 style={styles.profileImage}
                 defaultSource={require('../../assets/default-avatar.jpg')}

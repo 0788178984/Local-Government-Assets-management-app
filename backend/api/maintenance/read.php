@@ -16,38 +16,39 @@ try {
                 m.MaintenanceID,
                 m.AssetID,
                 a.AssetName,
+                a.Location as AssetLocation,
+                a.MaintenanceStatus as AssetCondition,
                 m.TeamID,
                 t.TeamName,
                 m.MaintenanceDate,
+                m.MaintenanceType,
                 m.Description,
-                m.Status,
-                m.Priority,
-                m.CompletionDate,
+                m.MaintenanceStatus,
+                m.MaintenanceProvider,
                 m.Cost
-              FROM maintenance_records m
+              FROM maintenancerecords m
               LEFT JOIN assets a ON m.AssetID = a.AssetID
-              LEFT JOIN maintenance_teams t ON m.TeamID = t.TeamID
+              LEFT JOIN maintenanceteams t ON m.TeamID = t.TeamID
               ORDER BY m.MaintenanceDate DESC";
 
     $stmt = $db->prepare($query);
     $stmt->execute();
+
+    // Get total counts by status
+    $countQuery = "SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN MaintenanceStatus = 'Pending' THEN 1 ELSE 0 END) as pending,
+        SUM(CASE WHEN MaintenanceStatus = 'In Progress' THEN 1 ELSE 0 END) as in_progress,
+        SUM(CASE WHEN MaintenanceStatus = 'Completed' THEN 1 ELSE 0 END) as completed
+    FROM maintenancerecords";
+    
+    $countStmt = $db->prepare($countQuery);
+    $countStmt->execute();
+    $counts = $countStmt->fetch(PDO::FETCH_ASSOC);
     
     $records = array();
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $record = array(
-            "MaintenanceID" => $row['MaintenanceID'],
-            "AssetID" => $row['AssetID'],
-            "AssetName" => $row['AssetName'],
-            "TeamID" => $row['TeamID'],
-            "TeamName" => $row['TeamName'],
-            "MaintenanceDate" => $row['MaintenanceDate'],
-            "Description" => $row['Description'],
-            "Status" => $row['Status'],
-            "Priority" => $row['Priority'],
-            "CompletionDate" => $row['CompletionDate'],
-            "Cost" => $row['Cost']
-        );
-        array_push($records, $record);
+        array_push($records, $row);
     }
 
     if (count($records) > 0) {
@@ -55,13 +56,20 @@ try {
         echo json_encode(array(
             "status" => "success",
             "message" => "Maintenance records retrieved successfully",
+            "counts" => $counts,
             "data" => $records
         ));
     } else {
-        http_response_code(200);  // Changed from 404 to 200 to handle empty results better
+        http_response_code(200);
         echo json_encode(array(
             "status" => "success",
             "message" => "No maintenance records found",
+            "counts" => [
+                "total" => 0,
+                "pending" => 0,
+                "in_progress" => 0,
+                "completed" => 0
+            ],
             "data" => []
         ));
     }
@@ -73,4 +81,4 @@ try {
         "message" => "Failed to retrieve maintenance records: " . $e->getMessage()
     ));
 }
-?> 
+?>

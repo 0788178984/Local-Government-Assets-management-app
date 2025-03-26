@@ -11,6 +11,9 @@ import Dashboard from '../screens/Dashboard';
 import AssetManagement from '../screens/AssetManagement';
 import MaintenanceManagement from '../screens/MaintenanceManagement';
 import MaintenanceSchedule from '../screens/MaintenanceSchedule';
+import MaintenanceScreen from '../screens/MaintenanceScreen';
+import MaintenanceRecordsScreen from '../screens/MaintenanceRecordsScreen';
+import MaintenanceSchedulesScreen from '../screens/MaintenanceSchedulesScreen';
 import AddMaintenance from '../screens/AddMaintenance';
 import ReportsScreen from '../screens/ReportsScreen';
 import GenerateReport from '../screens/GenerateReport';
@@ -18,6 +21,8 @@ import ViewReport from '../screens/ViewReport';
 import TestOperations from '../screens/TestOperations';
 import TeamsScreen from '../screens/TeamsScreen';
 import EditTeamScreen from '../screens/EditTeamScreen';
+import ScheduleDetails from '../screens/ScheduleDetails';
+import MaintenanceDetails from '../screens/MaintenanceDetails';
 
 const Stack = createStackNavigator();
 
@@ -76,6 +81,21 @@ const AppNavigator = () => {
         options={{ title: 'Maintenance Schedule' }} 
       />
       <Stack.Screen 
+        name="Maintenance" 
+        component={MaintenanceScreen} 
+        options={{ title: 'Maintenance' }} 
+      />
+      <Stack.Screen 
+        name="MaintenanceRecords" 
+        component={MaintenanceRecordsScreen} 
+        options={{ title: 'Maintenance Records' }} 
+      />
+      <Stack.Screen 
+        name="MaintenanceSchedules" 
+        component={MaintenanceSchedulesScreen} 
+        options={{ title: 'Maintenance Schedules' }} 
+      />
+      <Stack.Screen 
         name="AddMaintenance" 
         component={AddMaintenance} 
         options={{ title: 'Add Maintenance Record' }} 
@@ -109,6 +129,22 @@ const AppNavigator = () => {
         name="EditTeam" 
         component={EditTeamScreen} 
         options={{ title: 'Edit Team' }} 
+      />
+      <Stack.Screen 
+        name="ScheduleDetails" 
+        component={ScheduleDetails} 
+        options={{ title: 'Schedule Details' }} 
+      />
+      <Stack.Screen 
+        name="MaintenanceDetails" 
+        component={MaintenanceDetails} 
+        options={{ 
+          title: 'Maintenance Details',
+          // Make sure we have the header shown to navigate back
+          headerShown: true,
+          // Add animation to make it feel like a modal
+          cardStyle: { backgroundColor: colors.background }
+        }} 
       />
     </Stack.Navigator>
   );

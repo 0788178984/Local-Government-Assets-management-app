@@ -49,7 +49,7 @@ const EditProfileScreen = ({ navigation }) => {
       const userData = JSON.parse(userString);
       
       const response = await fetch(
-        'http://10.20.1.155/LocalGovtAssetMgt_App/backend/api/users/update_profile.php',
+        'http://192.168.43.91/LocalGovtAssetMgt_App/backend/api/users/update_profile.php',
         {
           method: 'POST',
           headers: {

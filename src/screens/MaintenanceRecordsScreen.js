@@ -76,6 +76,14 @@ const MaintenanceRecordsScreen = ({ navigation }) => {
     loadRecords();
   }, []);
 
+  // Navigate to maintenance details with a simpler approach
+  const navigateToMaintenanceDetails = (record) => {
+    console.log('Navigating to maintenance details:', record);
+    
+    // Use direct navigation instead of CommonActions
+    navigation.navigate('MaintenanceDetails', { record });
+  };
+
   const renderItem = ({ item }) => {
     if (!item) return null;
 
@@ -91,7 +99,7 @@ const MaintenanceRecordsScreen = ({ navigation }) => {
     return (
       <TouchableOpacity
         style={[styles.card, { backgroundColor: colors.card }]}
-        onPress={() => navigation.navigate('MaintenanceDetails', { record: item })}
+        onPress={() => navigateToMaintenanceDetails(item)}
       >
         <View style={styles.cardHeader}>
           <Text style={[styles.assetName, { color: colors.text }]}>{assetName}</Text>
@@ -220,4 +228,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MaintenanceRecordsScreen; 
+export default MaintenanceRecordsScreen;

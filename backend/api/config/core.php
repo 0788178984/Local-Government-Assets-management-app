@@ -9,5 +9,5 @@ date_default_timezone_set('Asia/Manila');
 $key = "your_secret_key_here";
 $issued_at = time();
 $expiration_time = $issued_at + (60 * 60); // valid for 1 hour
-$issuer = "http://10.20.1.155/LocalGovtAssetMgt_App/";
+$issuer = "http://192.168.43.91/LocalGovtAssetMgt_App/";
 ?> 
