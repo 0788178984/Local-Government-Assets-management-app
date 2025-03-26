@@ -23,6 +23,9 @@ import TeamsScreen from '../screens/TeamsScreen';
 import EditTeamScreen from '../screens/EditTeamScreen';
 import ScheduleDetails from '../screens/ScheduleDetails';
 import MaintenanceDetails from '../screens/MaintenanceDetails';
+import TermsOfServiceScreen from '../screens/TermsOfServiceScreen';
+import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
+import EditProfile from '../screens/EditProfile';
 
 const Stack = createStackNavigator();
 
@@ -144,6 +147,30 @@ const AppNavigator = () => {
           headerShown: true,
           // Add animation to make it feel like a modal
           cardStyle: { backgroundColor: colors.background }
+        }} 
+      />
+      <Stack.Screen 
+        name="TermsOfService" 
+        component={TermsOfServiceScreen} 
+        options={{ 
+          title: 'Terms of Service',
+          headerShown: false
+        }} 
+      />
+      <Stack.Screen 
+        name="PrivacyPolicy" 
+        component={PrivacyPolicyScreen} 
+        options={{ 
+          title: 'Privacy Policy',
+          headerShown: false
+        }} 
+      />
+      <Stack.Screen 
+        name="EditProfile" 
+        component={EditProfile} 
+        options={{ 
+          title: 'Edit Profile',
+          headerShown: true
         }} 
       />
     </Stack.Navigator>

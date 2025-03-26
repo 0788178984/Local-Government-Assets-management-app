@@ -88,6 +88,9 @@ class User {
 
     public function create() {
         try {
+            // Add debug logging
+            error_log("Creating user: " . $this->Username . ", Email: " . $this->Email . ", Role: " . $this->UserRole);
+            
             $query = "INSERT INTO " . $this->table_name . "
                     (Username, Email, Password, UserRole, AuthProvider, IsActive)
                     VALUES
@@ -101,8 +104,11 @@ class User {
             $this->Password = htmlspecialchars(strip_tags($this->Password));
             $this->UserRole = htmlspecialchars(strip_tags($this->UserRole));
 
+            error_log("After sanitization - Username: " . $this->Username . ", Email: " . $this->Email . ", Role: " . $this->UserRole);
+
             // Hash the password
             $password_hash = password_hash($this->Password, PASSWORD_BCRYPT);
+            error_log("Password hash generated: " . $password_hash);
 
             // Bind values
             $stmt->bindParam(":username", $this->Username);
@@ -110,7 +116,9 @@ class User {
             $stmt->bindParam(":password", $password_hash);
             $stmt->bindParam(":userRole", $this->UserRole);
 
-            return $stmt->execute();
+            $result = $stmt->execute();
+            error_log("User creation result: " . ($result ? "success" : "failed"));
+            return $result;
         } catch (PDOException $e) {
             error_log("Error in create: " . $e->getMessage());
             throw new Exception("Failed to create user");

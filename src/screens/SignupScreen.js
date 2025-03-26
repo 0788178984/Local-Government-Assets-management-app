@@ -11,18 +11,18 @@ import {
   Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { api } from '../services/api';
+import { register } from '../services/api';
 
 const SignupScreen = ({ navigation }) => {
-  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('user');
+  const [role, setRole] = useState('Asset Manager');
   const [loading, setLoading] = useState(false);
 
   const handleSignup = async () => {
-    if (!name || !email || !password || !confirmPassword) {
+    if (!username || !email || !password || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -34,27 +34,22 @@ const SignupScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
-      const userData = {
-        name,
-        email,
-        password,
-        role,
-      };
+      const response = await register(username, email, password, role);
 
-      const response = await api.post('/signup.php', userData);
+      console.log('Signup response:', response);
 
-      if (response.data.success) {
+      if (response.status === 'success') {
         Alert.alert(
           'Success',
           'Account created successfully! Please login.',
           [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
         );
       } else {
-        Alert.alert('Error', response.data.message || 'Failed to create account');
+        Alert.alert('Error', response.message || 'Failed to create account');
       }
     } catch (error) {
+      console.error('Signup error:', error);
       Alert.alert('Error', 'Failed to create account. Please try again.');
-      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -71,9 +66,10 @@ const SignupScreen = ({ navigation }) => {
           <Icon name="person" size={20} color="#1a237e" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
-            placeholder="Full Name"
-            value={name}
-            onChangeText={setName}
+            placeholder="Username"
+            value={username}
+            onChangeText={setUsername}
+            autoCapitalize="none"
           />
         </View>
 

@@ -21,8 +21,6 @@ const EditProfile = ({ navigation }) => {
   const [profile, setProfile] = useState({
     Username: '',
     Email: '',
-    PhoneNumber: '',
-    Department: '',
     Role: ''
   });
 
@@ -34,7 +32,11 @@ const EditProfile = ({ navigation }) => {
     try {
       const userData = await getUserSession();
       if (userData) {
-        setProfile(userData);
+        setProfile({
+          Username: userData.Username || '',
+          Email: userData.Email || '',
+          Role: userData.Role || ''
+        });
       }
     } catch (error) {
       console.error('Error loading profile:', error);
@@ -69,12 +71,9 @@ const EditProfile = ({ navigation }) => {
           source={require('../../assets/logo1.png')}
           style={styles.profileImage}
         />
-        <TouchableOpacity style={styles.changePhotoButton}>
-          <Icon name="camera-alt" size={20} color={colors.primary} />
-          <Text style={[styles.changePhotoText, { color: colors.primary }]}>
-            Change Photo
-          </Text>
-        </TouchableOpacity>
+        <Text style={[styles.roleText, { color: colors.text }]}>
+          Role: {profile.Role}
+        </Text>
       </View>
 
       <View style={styles.form}>
@@ -109,37 +108,6 @@ const EditProfile = ({ navigation }) => {
           />
         </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: colors.text }]}>Phone Number</Text>
-          <TextInput
-            style={[styles.input, { 
-              backgroundColor: colors.card,
-              color: colors.text,
-              borderColor: colors.border 
-            }]}
-            value={profile.PhoneNumber}
-            onChangeText={(text) => setProfile({...profile, PhoneNumber: text})}
-            placeholder="Enter phone number"
-            placeholderTextColor={colors.text}
-            keyboardType="phone-pad"
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: colors.text }]}>Department</Text>
-          <TextInput
-            style={[styles.input, { 
-              backgroundColor: colors.card,
-              color: colors.text,
-              borderColor: colors.border 
-            }]}
-            value={profile.Department}
-            onChangeText={(text) => setProfile({...profile, Department: text})}
-            placeholder="Enter department"
-            placeholderTextColor={colors.text}
-          />
-        </View>
-
         <TouchableOpacity 
           style={[styles.saveButton, { backgroundColor: colors.primary }]}
           onPress={handleSave}
@@ -164,14 +132,10 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
   },
-  changePhotoButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-    gap: 8,
-  },
-  changePhotoText: {
+  roleText: {
     fontSize: 16,
+    fontWeight: '500',
+    marginTop: 10,
   },
   form: {
     padding: 20,
@@ -202,7 +166,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-  },
+  }
 });
 
-export default EditProfile; 
+export default EditProfile;

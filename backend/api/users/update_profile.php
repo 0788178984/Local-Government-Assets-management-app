@@ -11,15 +11,16 @@ $db = $database->getConnection();
 
 try {
     $data = json_decode(file_get_contents("php://input"));
+    
+    // Log the received data for debugging
+    error_log("Update profile data received: " . print_r($data, true));
 
     if (!empty($data->UserID)) {
+        // Update only the fields that exist in the database
         $query = "UPDATE Users 
                   SET 
                     Username = :username,
-                    Email = :email,
-                    FullName = :fullname,
-                    PhoneNumber = :phone,
-                    Address = :address
+                    Email = :email
                   WHERE UserID = :userid";
 
         $stmt = $db->prepare($query);
@@ -28,14 +29,11 @@ try {
         $stmt->bindParam(":userid", $data->UserID);
         $stmt->bindParam(":username", $data->Username);
         $stmt->bindParam(":email", $data->Email);
-        $stmt->bindParam(":fullname", $data->FullName);
-        $stmt->bindParam(":phone", $data->PhoneNumber);
-        $stmt->bindParam(":address", $data->Address);
 
         if ($stmt->execute()) {
             // Fetch updated user data
             $fetchQuery = "SELECT UserID, Username, Email, UserRole as Role, 
-                          FullName, PhoneNumber, Address, ProfilePhoto, AuthProvider 
+                          AuthProvider, CreatedAt, LastLogin, IsActive 
                           FROM Users WHERE UserID = :userid";
             $fetchStmt = $db->prepare($fetchQuery);
             $fetchStmt->bindParam(":userid", $data->UserID);
@@ -62,4 +60,4 @@ try {
         "message" => "Database error: " . $e->getMessage()
     ]);
 }
-?> 
+?>

@@ -214,7 +214,7 @@ export const googleLogin = async (googleUser) => {
 
 export const register = async (username, email, password, role = 'Asset Manager') => {
     try {
-        const response = await api.post('/users/register.php', { username, email, password, role });
+        const response = await api.post(ENDPOINTS.register, { username, email, password, role });
         return response.data;
     } catch (error) {
         console.error('Register error details:', error);
@@ -640,16 +640,20 @@ export const updateUserProfile = async (profileData) => {
     }
     
     // Ensure we have the UserID in the request
+    // Only include fields that exist in the database
     const requestData = {
-      ...profileData,
-      UserID: userData.UserID
+      UserID: userData.UserID,
+      Username: profileData.Username,
+      Email: profileData.Email
     };
+    
+    console.log('Sending profile update:', requestData);
     
     const response = await api.post('users/update_profile.php', requestData);
     
     if (response.data.status === 'success') {
       // Update the local storage with the new profile data
-      const updatedUserData = { ...userData, ...profileData };
+      const updatedUserData = { ...userData, ...requestData };
       await AsyncStorage.setItem('user', JSON.stringify(updatedUserData));
     }
     

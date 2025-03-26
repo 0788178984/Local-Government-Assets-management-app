@@ -169,8 +169,12 @@ const SettingsScreen = ({ navigation }) => {
             navigation.navigate('ApiTest')
           )}
           {renderSettingItem('info', 'App Version', null, () => Alert.alert('Version', '1.0.0'))}
-          {renderSettingItem('description', 'Terms of Service', null, () => {})}
-          {renderSettingItem('privacy-tip', 'Privacy Policy', null, () => {})}
+          {renderSettingItem('description', 'Terms of Service', null, () => 
+            navigation.navigate('TermsOfService')
+          )}
+          {renderSettingItem('privacy-tip', 'Privacy Policy', null, () => 
+            navigation.navigate('PrivacyPolicy')
+          )}
         </View>
 
         <TouchableOpacity

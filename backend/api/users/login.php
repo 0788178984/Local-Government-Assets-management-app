@@ -45,27 +45,44 @@ try {
         $user->Email = $data->email;
         error_log("Attempting login for email: " . $data->email);
 
-        // Check if email exists and verify password
-        if ($user->emailExists() && password_verify($data->password, $user->Password)) {
-            error_log("Password verified successfully");
+        // Check if email exists
+        if ($user->emailExists()) {
+            error_log("Email exists, checking password");
+            error_log("Stored hashed password: " . $user->Password);
+            error_log("Provided password: " . $data->password);
             
-            // Update last login
-            $user->updateLastLogin();
+            // Debug password verification
+            $password_verified = password_verify($data->password, $user->Password);
+            error_log("Password verification result: " . ($password_verified ? "true" : "false"));
+            
+            if ($password_verified) {
+                error_log("Password verified successfully");
+                
+                // Update last login
+                $user->updateLastLogin();
 
-            // Return success response with user data
-            http_response_code(200);
-            echo json_encode(array(
-                "status" => "success",
-                "message" => "Login successful",
-                "data" => array(
-                    "userId" => $user->UserID,
-                    "username" => $user->Username,
-                    "email" => $user->Email,
-                    "role" => $user->UserRole
-                )
-            ));
+                // Return success response with user data
+                http_response_code(200);
+                echo json_encode(array(
+                    "status" => "success",
+                    "message" => "Login successful",
+                    "data" => array(
+                        "UserID" => $user->UserID,
+                        "Username" => $user->Username,
+                        "Email" => $user->Email,
+                        "Role" => $user->UserRole
+                    )
+                ));
+            } else {
+                error_log("Password verification failed");
+                http_response_code(401);
+                echo json_encode(array(
+                    "status" => "error",
+                    "message" => "Invalid credentials"
+                ));
+            }
         } else {
-            error_log("Invalid credentials");
+            error_log("Email not found: " . $data->email);
             http_response_code(401);
             echo json_encode(array(
                 "status" => "error",

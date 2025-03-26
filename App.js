@@ -33,6 +33,8 @@ import TeamsScreen from './src/screens/TeamsScreen';
 import EditTeamScreen from './src/screens/EditTeamScreen';
 import ApiTestScreen from './src/screens/ApiTestScreen';
 import ScheduleDetails from './src/screens/ScheduleDetails';
+import TermsOfServiceScreen from './src/screens/TermsOfServiceScreen';
+import PrivacyPolicyScreen from './src/screens/PrivacyPolicyScreen';
 
 // Create a stack navigator
 const Stack = createStackNavigator();
@@ -256,6 +258,22 @@ const AppNavigator = () => {
         options={{
           title: 'Schedule Details',
           headerShown: true,
+        }}
+      />
+      <Stack.Screen 
+        name="TermsOfService" 
+        component={TermsOfServiceScreen}
+        options={{
+          title: 'Terms of Service',
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="PrivacyPolicy" 
+        component={PrivacyPolicyScreen}
+        options={{
+          title: 'Privacy Policy',
+          headerShown: false,
         }}
       />
     </Stack.Navigator>
