@@ -16,6 +16,9 @@ import {
   SafeAreaView,
   useColorScheme,
   Animated,
+  TextInput,
+  Linking,
+  Alert
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LineChart, PieChart, BarChart } from 'react-native-chart-kit';
@@ -24,7 +27,6 @@ import { lightColors, darkColors } from '../theme/colors';
 import config from '../config/config';
 import { useNavigation } from '@react-navigation/native';
 import { API_URL } from '../services/api';
-import { Linking } from 'react-native';
 
 // Dashboard screen component
 const DashboardScreen = ({ navigation, route }) => {
@@ -528,17 +530,17 @@ const DashboardScreen = ({ navigation, route }) => {
   const renderQuickActionCards = () => {
     if (isLoading) {
       return (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#1a237e" />
-          <Text style={styles.loadingText}>Loading summary data...</Text>
+        <View style={[styles.loadingContainer, isDarkMode && styles.darkModeCard]}>
+          <ActivityIndicator size="large" color={isDarkMode ? "#6a74c9" : "#1a237e"} />
+          <Text style={[styles.loadingText, isDarkMode && styles.darkModeText]}>Loading summary data...</Text>
         </View>
       );
     }
 
     return error ? (
-      <View style={styles.errorContainer}>
+      <View style={[styles.errorContainer, isDarkMode && styles.darkModeCard]}>
         <Icon name="error-outline" size={40} color="#b71c1c" />
-        <Text style={styles.errorText}>{error}</Text>
+        <Text style={[styles.errorText, isDarkMode && styles.darkModeText]}>{error}</Text>
         <TouchableOpacity 
           style={styles.retryButton}
           onPress={handleRefresh}
@@ -552,19 +554,20 @@ const DashboardScreen = ({ navigation, route }) => {
           key={index}
           style={[
             styles.actionItem,
-            { backgroundColor: colors.card, borderLeftColor: item.color }
+            isDarkMode ? styles.darkModeCard : { backgroundColor: '#FFFFFF' },
+            { borderLeftColor: item.color }
           ]}
           onPress={() => navigation.navigate(item.screen)}
         >
           <Icon name={item.icon} size={24} color={item.color} />
           <View style={styles.actionText}>
-            <Text style={[styles.actionTitle, { color: colors.text }]}>
+            <Text style={[styles.actionTitle, isDarkMode && styles.darkModeText]}>
               {item.title}
             </Text>
-            <Text style={[styles.actionCount, { color: colors.text }]}>
+            <Text style={[styles.actionCount, isDarkMode && styles.darkModeText]}>
               {item.count}
             </Text>
-            <Text style={[styles.actionSubtitle, { color: colors.textSecondary }]}>
+            <Text style={[styles.actionSubtitle, isDarkMode && { color: '#aaa' }]}>
               {item.subtitle}
             </Text>
           </View>
@@ -594,8 +597,37 @@ const DashboardScreen = ({ navigation, route }) => {
     return null;
   };
 
+  // Apply theme changes when isDarkMode changes
+  useEffect(() => {
+    if (isDarkMode) {
+      // Save dark mode preference
+      AsyncStorage.setItem('isDarkMode', 'true');
+    } else {
+      AsyncStorage.setItem('isDarkMode', 'false');
+    }
+  }, [isDarkMode]);
+
+  // Load dark mode preference on initial load
+  useEffect(() => {
+    const loadDarkModePreference = async () => {
+      try {
+        const darkModePreference = await AsyncStorage.getItem('isDarkMode');
+        if (darkModePreference !== null) {
+          setIsDarkMode(darkModePreference === 'true');
+        } else {
+          // Default to system preference if no saved preference
+          setIsDarkMode(colorScheme === 'dark');
+        }
+      } catch (error) {
+        console.error('Error loading dark mode preference:', error);
+      }
+    };
+    
+    loadDarkModePreference();
+  }, []);
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, isDarkMode && styles.darkModeContainer]}>
       {renderConnectionStatus()}
       <Animated.View style={[
         styles.header,
@@ -625,37 +657,24 @@ const DashboardScreen = ({ navigation, route }) => {
       <ProfileSettingsModal />
 
       {/* Search Bar */}
-      <TouchableOpacity 
-        style={styles.searchButton}
-        onPress={() => setIsSearchVisible(!isSearchVisible)}
-      >
-        <View style={styles.searchPlaceholder}>
-          <Icon name="search" size={20} color="#666" />
-          <Text style={styles.searchPlaceholderText}>Search assets, maintenance...</Text>
-        </View>
-      </TouchableOpacity>
-
-      {isSearchVisible && (
-        <View style={styles.searchContainer}>
-          <Icon name="search" size={20} color="#666" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search assets, maintenance..."
-            placeholderTextColor="#666"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            autoFocus={true}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity 
-              style={styles.clearSearch}
-              onPress={() => setSearchQuery('')}
-            >
-              <Icon name="close" size={20} color="#666" />
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
+      <View style={[styles.searchContainer, isDarkMode && styles.darkModeCard]}>
+        <Icon name="search" size={20} color={isDarkMode ? '#aaa' : '#666'} />
+        <TextInput
+          style={[styles.searchInput, isDarkMode && styles.darkModeText]}
+          placeholder="Search assets, maintenance..."
+          placeholderTextColor={isDarkMode ? '#aaa' : '#666'}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity 
+            style={styles.clearSearch}
+            onPress={() => setSearchQuery('')}
+          >
+            <Icon name="close" size={20} color={isDarkMode ? '#aaa' : '#666'} />
+          </TouchableOpacity>
+        )}
+      </View>
       <Animated.ScrollView
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -667,7 +686,7 @@ const DashboardScreen = ({ navigation, route }) => {
           <RefreshControl
             refreshing={isLoading}
             onRefresh={handleRefresh}
-            colors={['#1a237e']}
+            colors={[isDarkMode ? '#6a74c9' : '#1a237e']}
             tintColor={isDarkMode ? '#ffffff' : '#1a237e'}
             title="Pull to refresh..."
             titleColor={isDarkMode ? '#ffffff' : '#666666'}
@@ -676,11 +695,52 @@ const DashboardScreen = ({ navigation, route }) => {
       >
         {/* Quick Actions Section */}
         <View style={styles.quickActions}>
-          {renderQuickActionCards()}
+          {isLoading ? (
+            <View style={[styles.loadingContainer, isDarkMode && styles.darkModeCard]}>
+              <ActivityIndicator size="large" color={isDarkMode ? "#6a74c9" : "#1a237e"} />
+              <Text style={[styles.loadingText, isDarkMode && styles.darkModeText]}>Loading summary data...</Text>
+            </View>
+          ) : error ? (
+            <View style={[styles.errorContainer, isDarkMode && styles.darkModeCard]}>
+              <Icon name="error-outline" size={40} color="#b71c1c" />
+              <Text style={[styles.errorText, isDarkMode && styles.darkModeText]}>{error}</Text>
+              <TouchableOpacity 
+                style={styles.retryButton}
+                onPress={handleRefresh}
+              >
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            quickActionCards.map((item, index) => (
+              <TouchableOpacity 
+                key={index}
+                style={[
+                  styles.actionItem,
+                  isDarkMode ? styles.darkModeCard : { backgroundColor: '#FFFFFF' },
+                  { borderLeftColor: item.color }
+                ]}
+                onPress={() => navigation.navigate(item.screen)}
+              >
+                <Icon name={item.icon} size={24} color={item.color} />
+                <View style={styles.actionText}>
+                  <Text style={[styles.actionTitle, isDarkMode && styles.darkModeText]}>
+                    {item.title}
+                  </Text>
+                  <Text style={[styles.actionCount, isDarkMode && styles.darkModeText]}>
+                    {item.count}
+                  </Text>
+                  <Text style={[styles.actionSubtitle, isDarkMode && { color: '#aaa' }]}>
+                    {item.subtitle}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
         </View>
 
         {/* Charts Section */}
-        <View style={styles.chartsContainer}>
+        <View style={[styles.chartsContainer, isDarkMode && styles.darkModeCard]}>
           <ScrollView
             ref={scrollViewRef}
             horizontal
@@ -690,7 +750,9 @@ const DashboardScreen = ({ navigation, route }) => {
           >
             {charts.map((chart, index) => (
               <View key={index} style={styles.chartWrapper}>
-                <Text style={styles.chartTitle}>{chart.title}</Text>
+                <Text style={[styles.chartTitle, isDarkMode && styles.darkModeText]}>
+                  {chart.title}
+                </Text>
                 {renderChart(chart, index)}
               </View>
             ))}
@@ -702,6 +764,7 @@ const DashboardScreen = ({ navigation, route }) => {
                 style={[
                   styles.paginationDot,
                   currentChartIndex === index && styles.paginationDotActive,
+                  isDarkMode && { backgroundColor: currentChartIndex === index ? '#6a74c9' : '#444' }
                 ]}
               />
             ))}
@@ -773,19 +836,23 @@ const DashboardScreen = ({ navigation, route }) => {
               {mainDashboardItems.map((item, index) => (
                 <TouchableOpacity
                   key={index}
-                  style={styles.dashboardCard}
+                  style={[
+                    styles.menuItem,
+                    isDarkMode && styles.darkModeMenuItem
+                  ]}
                   onPress={() => {
                     navigation.navigate(item.screen);
                     setIsMenuVisible(false);
                   }}
                 >
-                  <Icon name={item.icon} size={40} color={colors.primary} />
-                  <View style={styles.cardContent}>
-                    <Text style={[styles.cardTitle, { color: colors.text }]}>{item.title}</Text>
-                    <Text style={[styles.cardDescription, { color: colors.text }]}>{item.description}</Text>
-                  </View>
-                  <Icon name="chevron-right" size={24} color={colors.text} />
-            </TouchableOpacity>
+                  <Icon name={item.icon} size={24} color={isDarkMode ? '#fff' : colors.primary} />
+                  <Text style={[
+                    styles.menuItemText,
+                    isDarkMode && styles.darkModeText,
+                    { marginLeft: 12 }
+                  ]}>{item.title}</Text>
+                  <Icon name="chevron-right" size={20} color={isDarkMode ? '#aaa' : '#666'} />
+                </TouchableOpacity>
               ))}
 
               {/* Settings Option */}
@@ -797,7 +864,11 @@ const DashboardScreen = ({ navigation, route }) => {
                 }}
               >
                 <Icon name="settings" size={24} color={isDarkMode ? '#fff' : '#666'} />
-              <Text style={[styles.menuItemText, isDarkMode && styles.darkModeText]}>Settings</Text>
+              <Text style={[
+                styles.menuItemText,
+                isDarkMode && styles.darkModeText,
+                { marginLeft: 12 }
+              ]}>Settings</Text>
                 <Icon 
                   name="chevron-right" 
                   size={20} 
@@ -813,14 +884,22 @@ const DashboardScreen = ({ navigation, route }) => {
               onPress={() => setIsDarkMode(!isDarkMode)}
             >
                 <Icon name={isDarkMode ? "light-mode" : "dark-mode"} size={24} color={isDarkMode ? '#fff' : '#666'} />
-              <Text style={[styles.menuItemText, isDarkMode && styles.darkModeText]}>
+              <Text style={[
+                styles.menuItemText,
+                isDarkMode && styles.darkModeText,
+                { marginLeft: 12 }
+              ]}>
                 {isDarkMode ? 'Light Mode' : 'Dark Mode'}
               </Text>
             </TouchableOpacity>
 
               <TouchableOpacity style={[styles.menuItem, styles.logoutButton]} onPress={handleLogout}>
                 <Icon name="logout" size={24} color={isDarkMode ? '#fff' : '#666'} />
-              <Text style={[styles.menuItemText, isDarkMode && styles.darkModeText]}>Logout</Text>
+              <Text style={[
+                styles.menuItemText,
+                isDarkMode && styles.darkModeText,
+                { marginLeft: 12 }
+              ]}>Logout</Text>
             </TouchableOpacity>
             </View>
           </View>
@@ -837,12 +916,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  darkModeContainer: {
+    backgroundColor: '#1a1a1a',
+  },
   
   // Header styles
   header: {
     backgroundColor: '#1a237e',
     paddingTop: Platform.OS === 'android' ? 35 : 40,
     paddingBottom: 15,
+  },
+  darkModeHeader: {
+    backgroundColor: '#333',
   },
   headerContent: {
     flexDirection: 'row',
@@ -885,6 +970,9 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
+  darkModeContent: {
+    backgroundColor: '#1a1a1a',
+  },
   menuHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -920,10 +1008,6 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: 4,
   },
-  darkModeContent: {
-    backgroundColor: '#1a1a1a',
-    borderLeftColor: '#333',
-  },
   darkModeText: {
     color: '#fff',
   },
@@ -933,21 +1017,25 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
-    paddingHorizontal: 20,
-    gap: 15,
+    padding: 12,
+    backgroundColor: '#FFFFFF',
+    marginVertical: 4,
     borderRadius: 8,
     marginHorizontal: 10,
+  },
+  darkModeMenuItem: {
+    backgroundColor: '#333',
   },
   activeMenuItem: {
     backgroundColor: '#f0f0f0',
     borderRadius: 8,
   },
   menuItemText: {
-    flex: 1,
     fontSize: 16,
-    color: '#000',
     fontWeight: '500',
+    marginLeft: 12,
+    flex: 1,
+    color: '#333',
   },
   content: {
     flex: 1,
@@ -988,6 +1076,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 10,
     elevation: 2,
+  },
+  darkModeCard: {
+    backgroundColor: '#333',
   },
   chartWrapper: {
     width: Dimensions.get('window').width - 40,
@@ -1105,6 +1196,29 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 10,
     fontSize: 14,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    margin: 10,
+    marginTop: 0,
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    height: 50,
+    elevation: 2,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 16,
+    color: '#333',
+  },
+  clearSearch: {
+    padding: 5,
   },
 });
 
