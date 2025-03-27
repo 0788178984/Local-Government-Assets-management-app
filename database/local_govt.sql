@@ -1,4 +1,4 @@
--- Local Government Asset Management System Database Schema
+-- Local Government Asset Management System Database Schema and Initialization
 
 -- Create the database if it doesn't exist
 CREATE DATABASE IF NOT EXISTS local_govt_assets;
@@ -53,11 +53,11 @@ CREATE TABLE MaintenanceRecords (
     AssetID INT NOT NULL,
     TeamID INT,
     MaintenanceDate DATE NOT NULL,
-    MaintenanceType ENUM('Routine', 'Repairs', 'Upgrades') NOT NULL,
+    MaintenanceType VARCHAR(50) NOT NULL, -- ENUM replaced with VARCHAR
     Description TEXT NOT NULL,
     Cost DECIMAL(15,2) NOT NULL,
-    MaintenanceStatus ENUM('Completed', 'In Progress', 'Pending') NOT NULL,
-    MaintenanceProvider ENUM('In-House', 'Contractor') NOT NULL,
+    MaintenanceStatus VARCHAR(50) NOT NULL, -- ENUM replaced with VARCHAR
+    MaintenanceProvider VARCHAR(50) NOT NULL, -- ENUM replaced with VARCHAR
     CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (AssetID) REFERENCES Assets(AssetID),
@@ -68,8 +68,8 @@ CREATE TABLE MaintenanceRecords (
 CREATE TABLE MaintenanceSchedules (
     ScheduleID INT AUTO_INCREMENT PRIMARY KEY,
     AssetID INT NOT NULL,
-    ScheduleType ENUM('Regular Inspections', 'Preventive Maintenance') NOT NULL,
-    Frequency ENUM('Monthly', 'Quarterly', 'Annually') NOT NULL,
+    ScheduleType VARCHAR(50) NOT NULL, -- ENUM replaced with VARCHAR
+    Frequency VARCHAR(50) NOT NULL, -- ENUM replaced with VARCHAR
     NextDueDate DATE NOT NULL,
     LastCompletedDate DATE,
     CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -98,7 +98,6 @@ CREATE INDEX idx_maintenance_date ON MaintenanceRecords(MaintenanceDate);
 CREATE INDEX idx_schedules_asset ON MaintenanceSchedules(AssetID);
 CREATE INDEX idx_schedules_due ON MaintenanceSchedules(NextDueDate);
 CREATE INDEX idx_audit_user ON AuditLog(UserID);
-CREATE INDEX idx_audit_table ON AuditLog(TableName);
 
 -- Create view for asset summary
 CREATE VIEW AssetSummaryView AS
@@ -110,25 +109,11 @@ SELECT
     a.MaintenanceStatus,
     a.LastMaintenanceDate,
     a.NextMaintenanceDate,
-    COUNT(mr.MaintenanceID) as MaintenanceCount,
-    COALESCE(SUM(mr.Cost), 0) as TotalMaintenanceCost
+    COUNT(mr.MaintenanceID) AS MaintenanceCount,
+    COALESCE(SUM(mr.Cost), 0) AS TotalMaintenanceCost
 FROM Assets a
 LEFT JOIN MaintenanceRecords mr ON a.AssetID = mr.AssetID
-GROUP BY a.AssetID, a.AssetName, a.AssetType, a.Location, 
-         a.MaintenanceStatus, a.LastMaintenanceDate, a.NextMaintenanceDate;
-
--- Create view for upcoming maintenance
-CREATE VIEW UpcomingMaintenanceView AS
-SELECT 
-    a.AssetID,
-    a.AssetName,
-    ms.ScheduleType,
-    ms.Frequency,
-    ms.NextDueDate
-FROM Assets a
-JOIN MaintenanceSchedules ms ON a.AssetID = ms.AssetID
-WHERE ms.NextDueDate > CURDATE()
-ORDER BY ms.NextDueDate;
+GROUP BY a.AssetID;
 
 -- Create trigger for audit logging on Assets
 DELIMITER //
@@ -143,15 +128,71 @@ BEGIN
         'Assets',
         NEW.AssetID,
         JSON_OBJECT(
-            'MaintenanceStatus', OLD.MaintenanceStatus,
-            'CurrentValue', OLD.CurrentValue,
-            'LastMaintenanceDate', OLD.LastMaintenanceDate
+            'MaintenanceStatus', CAST(OLD.MaintenanceStatus AS CHAR),
+            'CurrentValue', CAST(OLD.CurrentValue AS CHAR),
+            'LastMaintenanceDate', CAST(OLD.LastMaintenanceDate AS CHAR)
         ),
         JSON_OBJECT(
-            'MaintenanceStatus', NEW.MaintenanceStatus,
-            'CurrentValue', NEW.CurrentValue,
-            'LastMaintenanceDate', NEW.LastMaintenanceDate
+            'MaintenanceStatus', CAST(NEW.MaintenanceStatus AS CHAR),
+            'CurrentValue', CAST(NEW.CurrentValue AS CHAR),
+            'LastMaintenanceDate', CAST(NEW.LastMaintenanceDate AS CHAR)
         )
     );
 END //
 DELIMITER ;
+
+-- Stored Procedures
+DELIMITER //
+
+CREATE PROCEDURE AddNewAsset(
+    IN p_AssetName VARCHAR(100),
+    IN p_AssetType VARCHAR(50),
+    IN p_Location VARCHAR(255),
+    IN p_AcquisitionDate DATE,
+    IN p_InitialCost DECIMAL(15,2),
+    IN p_CurrentValue DECIMAL(15,2),
+    IN p_MaintenanceStatus VARCHAR(50),
+    IN p_CreatedBy INT
+)
+BEGIN
+    INSERT INTO Assets (
+        AssetName, AssetType, Location, AcquisitionDate,
+        InitialCost, CurrentValue, MaintenanceStatus, CreatedBy
+    ) VALUES (
+        p_AssetName, p_AssetType, p_Location, p_AcquisitionDate,
+        p_InitialCost, p_CurrentValue, p_MaintenanceStatus, p_CreatedBy
+    );
+END //
+
+CREATE PROCEDURE RecordMaintenance(
+    IN p_AssetID INT,
+    IN p_TeamID INT,
+    IN p_MaintenanceDate DATE,
+    IN p_MaintenanceType VARCHAR(50),
+    IN p_Description TEXT,
+    IN p_Cost DECIMAL(15,2),
+    IN p_MaintenanceStatus VARCHAR(50),
+    IN p_MaintenanceProvider VARCHAR(50)
+)
+BEGIN
+    INSERT INTO MaintenanceRecords (
+        AssetID, TeamID, MaintenanceDate, MaintenanceType,
+        Description, Cost, MaintenanceStatus, MaintenanceProvider
+    ) VALUES (
+        p_AssetID, p_TeamID, p_MaintenanceDate, p_MaintenanceType,
+        p_Description, p_Cost, p_MaintenanceStatus, p_MaintenanceProvider
+    );
+END //
+
+DELIMITER ;
+
+-- First make sure we're using the right database
+USE local_govt_assets;
+
+-- Clear any existing test users
+DELETE FROM Users WHERE Email IN ('test@example.com', 'admin@localgov.com');
+
+-- Insert test users with bcrypt hashed passwords
+INSERT INTO Users (Username, Email, Password, UserRole, IsActive) VALUES
+('TestUser', 'test@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Asset Manager', 1),
+('AdminUser', 'admin@localgov.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Admin', 1);

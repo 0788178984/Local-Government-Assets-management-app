@@ -5,172 +5,314 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Image,
-  StatusBar,
   Alert,
+  ActivityIndicator,
+  useColorScheme,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { login } from '../services/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { lightColors, darkColors } from '../theme/colors';
+import { setUserSession } from '../utils/authUtils';
+import config from '../config/config';
 
 const LoginScreen = ({ navigation }) => {
-  const [email, setEmail] = useState('');
+  const isDarkMode = useColorScheme() === 'dark';
+  const colors = isDarkMode ? darkColors : lightColors;
+  
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+
+  const validateInput = () => {
+    if (!username.trim()) {
+      setError('Username is required');
+      return false;
+    }
+    if (!password.trim()) {
+      setError('Password is required');
+      return false;
+    }
+    return true;
+  };
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter both email and password');
-      return;
-    }
-
     try {
+      setError('');
+      if (!validateInput()) return;
+
       setIsLoading(true);
-      const userData = await login(email, password);
-      if (userData.status === 'success') {
-        await AsyncStorage.setItem('userToken', userData.data.token);
-        Alert.alert('Success', `Welcome back, ${userData.data.username}!`, [
-          {
-            text: 'OK',
-            onPress: () => navigation.replace('Dashboard', { user: userData.data }),
-          },
-        ]);
+
+      // Log configuration for debugging
+      console.log('API URL:', config.API_URL);
+      console.log('LOGIN API ENDPOINT:', `${config.API_URL}login_fix.php`); // Use the working endpoint
+
+      // Add retry logic
+      const maxRetries = 3;
+      let currentTry = 0;
+      let lastError = null;
+
+      while (currentTry < maxRetries) {
+        try {
+          // Use the working login_fix.php endpoint
+          const response = await fetch(`${config.API_URL}login_fix.php`, {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              "Username": username.trim(),
+              "Password": password
+            })
+          });
+
+          // Log response details for debugging
+          console.log('Response status:', response.status);
+          console.log('Response headers:', response.headers);
+          
+          const responseText = await response.text();
+          console.log('Raw response:', responseText);
+
+          // If response is empty, throw a specific error
+          if (!responseText.trim()) {
+            throw new Error('Server returned empty response. Please check server logs.');
+          }
+
+          let data;
+          try {
+            data = JSON.parse(responseText);
+          } catch (parseError) {
+            console.error('JSON parse error:', parseError);
+            throw new Error('Server returned invalid JSON. Please contact administrator.');
+          }
+
+          if (data.status === 'success') {
+            // Save user session with tokens
+            await setUserSession(
+              data.data,
+              data.data.token,
+              data.data.refreshToken
+            );
+
+            // Navigate to AuthLoading which will verify and then go to Dashboard
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'AuthLoading' }],
+            });
+            return; // Success, exit the function
+          } else {
+            throw new Error(data.message || 'Login failed. Please try again.');
+          }
+        } catch (attemptError) {
+          lastError = attemptError;
+          currentTry++;
+          
+          if (currentTry < maxRetries) {
+            // Wait before retrying (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, currentTry) * 1000));
+            continue;
+          }
+          throw lastError;
+        }
       }
     } catch (error) {
-      Alert.alert('Error', error.message || 'Invalid email or password');
+      console.error('Login error:', error);
+      setError(error.message || 'Network error. Please check your connection.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  return (
-    <View style={styles.container}>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor="#ffffff"
-        translucent={true}
-      />
-      <View style={styles.logoContainer}>
-        <Image
-          source={require('../../assets/logo1.png')}
-          style={styles.logo}
-        />
-        <Text style={styles.title}>Local Government Assets Management</Text>
-      </View>
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
-      <View style={styles.formContainer}>
-        <View style={styles.inputContainer}>
-          <Icon name="email" size={24} color="#666" style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            editable={!isLoading}
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.logoContainer}>
+          <Image
+            source={{ uri: config.logoUrl }}
+            style={styles.logo}
+            resizeMode="contain"
           />
+          <Text style={[styles.title, { color: colors.text }]}>
+            Local Government Asset Management
+          </Text>
         </View>
 
-        <View style={styles.inputContainer}>
-          <Icon name="lock" size={24} color="#666" style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-            editable={!isLoading}
-          />
+        <View style={styles.formContainer}>
+          {error ? (
+            <View style={styles.errorContainer}>
+              <Icon name="error" size={20} color={colors.error} />
+              <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
+            </View>
+          ) : null}
+
+          <View style={[styles.inputContainer, { backgroundColor: colors.card }]}>
+            <Icon name="person" size={20} color={colors.text} style={styles.inputIcon} />
+            <TextInput
+              style={[styles.input, { color: colors.text }]}
+              placeholder="Username"
+              placeholderTextColor={colors.placeholder}
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+              editable={!isLoading}
+            />
+          </View>
+
+          <View style={[styles.inputContainer, { backgroundColor: colors.card }]}>
+            <Icon name="lock" size={20} color={colors.text} style={styles.inputIcon} />
+            <TextInput
+              style={[styles.input, { color: colors.text }]}
+              placeholder="Password"
+              placeholderTextColor={colors.placeholder}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              editable={!isLoading}
+            />
+            <TouchableOpacity
+              onPress={togglePasswordVisibility}
+              style={styles.passwordToggle}
+            >
+              <Icon
+                name={showPassword ? "visibility-off" : "visibility"}
+                size={20}
+                color={colors.text}
+              />
+            </TouchableOpacity>
+          </View>
+
           <TouchableOpacity
-            onPress={() => setShowPassword(!showPassword)}
-            style={styles.eyeIcon}
+            style={[
+              styles.loginButton,
+              { backgroundColor: colors.primary },
+              isLoading && styles.disabledButton
+            ]}
+            onPress={handleLogin}
             disabled={isLoading}
           >
-            <Icon
-              name={showPassword ? 'visibility-off' : 'visibility'}
-              size={24}
-              color="#666"
-            />
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Icon name="login" size={20} color="#fff" />
+                <Text style={styles.loginButtonText}>Login</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.forgotPasswordButton}
+            onPress={() => navigation.navigate('ForgotPassword')}
+            disabled={isLoading}
+          >
+            <Text style={[styles.forgotPasswordText, { color: colors.primary }]}>
+              Forgot Password?
+            </Text>
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity 
-          style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
-          onPress={handleLogin}
-          disabled={isLoading}
-        >
-          <Text style={styles.loginButtonText}>
-            {isLoading ? 'Logging in...' : 'Login'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 20,
   },
   logoContainer: {
     alignItems: 'center',
-    marginTop: 60,
     marginBottom: 40,
   },
   logo: {
     width: 120,
     height: 120,
-    resizeMode: 'contain',
+    marginBottom: 20,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
     textAlign: 'center',
-    marginTop: 20,
-    paddingHorizontal: 20,
+    marginBottom: 10,
   },
   formContainer: {
-    paddingHorizontal: 20,
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffebee',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  errorText: {
+    marginLeft: 10,
+    flex: 1,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
     borderRadius: 8,
     marginBottom: 15,
     paddingHorizontal: 15,
+    height: 50,
   },
   inputIcon: {
     marginRight: 10,
   },
   input: {
     flex: 1,
-    height: 50,
-    color: '#333',
-    fontSize: 16,
+    height: '100%',
   },
-  eyeIcon: {
+  passwordToggle: {
     padding: 10,
   },
   loginButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
-    height: 50,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    height: 50,
+    borderRadius: 8,
     marginTop: 20,
   },
-  loginButtonDisabled: {
-    backgroundColor: '#ccc',
+  disabledButton: {
+    opacity: 0.7,
   },
   loginButtonText: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 10,
+  },
+  forgotPasswordButton: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 

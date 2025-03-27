@@ -1,0 +1,95 @@
+[27-Mar-2025 19:34:26 Africa/Kampala] PHP Fatal error:  Cannot redeclare User::updateLastLogin() in C:\xamppu\htdocs\LocalGovtAssetMgt_App\backend\api\objects\user.php on line 156
+[27-Mar-2025 19:34:29 Africa/Kampala] PHP Fatal error:  Cannot redeclare User::updateLastLogin() in C:\xamppu\htdocs\LocalGovtAssetMgt_App\backend\api\objects\user.php on line 156
+[27-Mar-2025 19:34:33 Africa/Kampala] PHP Fatal error:  Cannot redeclare User::updateLastLogin() in C:\xamppu\htdocs\LocalGovtAssetMgt_App\backend\api\objects\user.php on line 156
+[27-Mar-2025 19:38:10 Africa/Kampala] PHP Fatal error:  Cannot redeclare User::updateLastLogin() in C:\xamppu\htdocs\LocalGovtAssetMgt_App\backend\api\objects\user.php on line 190
+[27-Mar-2025 19:38:12 Africa/Kampala] PHP Fatal error:  Cannot redeclare User::updateLastLogin() in C:\xamppu\htdocs\LocalGovtAssetMgt_App\backend\api\objects\user.php on line 190
+[27-Mar-2025 19:38:17 Africa/Kampala] PHP Fatal error:  Cannot redeclare User::updateLastLogin() in C:\xamppu\htdocs\LocalGovtAssetMgt_App\backend\api\objects\user.php on line 190
+[27-Mar-2025 19:44:18 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 19:44:43 Africa/Kampala] PHP Fatal error:  Cannot redeclare User::updateLastLogin() in C:\xamppu\htdocs\LocalGovtAssetMgt_App\backend\api\objects\user.php on line 190
+[27-Mar-2025 19:44:45 Africa/Kampala] PHP Fatal error:  Cannot redeclare User::updateLastLogin() in C:\xamppu\htdocs\LocalGovtAssetMgt_App\backend\api\objects\user.php on line 190
+[27-Mar-2025 19:44:49 Africa/Kampala] PHP Fatal error:  Cannot redeclare User::updateLastLogin() in C:\xamppu\htdocs\LocalGovtAssetMgt_App\backend\api\objects\user.php on line 190
+[27-Mar-2025 19:51:05 Africa/Kampala] PHP Fatal error:  Cannot redeclare User::updateLastLogin() in C:\xamppu\htdocs\LocalGovtAssetMgt_App\backend\api\objects\user.php on line 182
+[27-Mar-2025 19:51:08 Africa/Kampala] PHP Fatal error:  Cannot redeclare User::updateLastLogin() in C:\xamppu\htdocs\LocalGovtAssetMgt_App\backend\api\objects\user.php on line 182
+[27-Mar-2025 19:51:12 Africa/Kampala] PHP Fatal error:  Cannot redeclare User::updateLastLogin() in C:\xamppu\htdocs\LocalGovtAssetMgt_App\backend\api\objects\user.php on line 182
+[27-Mar-2025 19:52:02 Africa/Kampala] PHP Fatal error:  Cannot redeclare User::updateLastLogin() in C:\xamppu\htdocs\LocalGovtAssetMgt_App\backend\api\objects\user.php on line 182
+[27-Mar-2025 19:52:05 Africa/Kampala] PHP Fatal error:  Cannot redeclare User::updateLastLogin() in C:\xamppu\htdocs\LocalGovtAssetMgt_App\backend\api\objects\user.php on line 182
+[27-Mar-2025 19:52:09 Africa/Kampala] PHP Fatal error:  Cannot redeclare User::updateLastLogin() in C:\xamppu\htdocs\LocalGovtAssetMgt_App\backend\api\objects\user.php on line 182
+[27-Mar-2025 19:57:36 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 19:58:50 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:00:07 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:01:45 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:01:45 Africa/Kampala] Attempting login for: admin@localgov.com
+[27-Mar-2025 20:02:01 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:02:01 Africa/Kampala] Raw request data: {"Username":"admin@localgov.com","Password":"password"}
+[27-Mar-2025 20:02:01 Africa/Kampala] Decoded data: stdClass Object
+(
+    [Username] => admin@localgov.com
+    [Password] => password
+)
+
+[27-Mar-2025 20:02:01 Africa/Kampala] Login error: Invalid username or password
+[27-Mar-2025 20:02:04 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:02:04 Africa/Kampala] Raw request data: {"Username":"admin@localgov.com","Password":"password"}
+[27-Mar-2025 20:02:04 Africa/Kampala] Decoded data: stdClass Object
+(
+    [Username] => admin@localgov.com
+    [Password] => password
+)
+
+[27-Mar-2025 20:02:04 Africa/Kampala] Login error: Invalid username or password
+[27-Mar-2025 20:02:08 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:02:08 Africa/Kampala] Raw request data: {"Username":"admin@localgov.com","Password":"password"}
+[27-Mar-2025 20:02:08 Africa/Kampala] Decoded data: stdClass Object
+(
+    [Username] => admin@localgov.com
+    [Password] => password
+)
+
+[27-Mar-2025 20:02:08 Africa/Kampala] Login error: Invalid username or password
+[27-Mar-2025 20:05:49 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:05:49 Africa/Kampala] Attempting login for: admin@localgov.com
+[27-Mar-2025 20:11:23 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:11:23 Africa/Kampala] Attempting login for: admin@localgov.com
+[27-Mar-2025 20:11:48 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:11:48 Africa/Kampala] Attempting login for: admin@localgov.com
+[27-Mar-2025 20:13:47 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:13:47 Africa/Kampala] Attempting login for: admin@localgov.com
+[27-Mar-2025 20:15:36 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:15:36 Africa/Kampala] Attempting login for: admin@localgov.com
+[27-Mar-2025 20:17:40 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:17:40 Africa/Kampala] Attempting login for: admin@localgov.com
+[27-Mar-2025 20:23:07 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:23:07 Africa/Kampala] Attempting login for: admin@localgov.com
+[27-Mar-2025 20:25:32 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:25:32 Africa/Kampala] Attempting login for: admin@localgov.com
+[27-Mar-2025 20:27:55 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:27:55 Africa/Kampala] Attempting login for: admin@localgov.com
+[27-Mar-2025 20:28:15 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:28:15 Africa/Kampala] Attempting login for: admin@localgov.com
+[27-Mar-2025 20:29:07 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:29:07 Africa/Kampala] Attempting login for: admin@localgov.com
+[27-Mar-2025 20:32:48 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:32:48 Africa/Kampala] Attempting login for: admin@localgov.com
+[27-Mar-2025 20:33:23 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:33:23 Africa/Kampala] Attempting login for: admin@localgov.com
+[27-Mar-2025 20:36:02 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:36:02 Africa/Kampala] Attempting login for: admin@localgov.com
+[27-Mar-2025 20:36:25 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:36:25 Africa/Kampala] Attempting login for: admin@localgov.com
+[27-Mar-2025 20:43:32 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:43:32 Africa/Kampala] Attempting login for: admin@localgov.com
+[27-Mar-2025 20:47:22 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:47:22 Africa/Kampala] Attempting login for: admin@localgov.com
+[27-Mar-2025 20:51:23 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:51:23 Africa/Kampala] Attempting login for: admin@localgov.com
+[27-Mar-2025 20:51:26 Africa/Kampala] PHP Fatal error:  Cannot redeclare sendResponse() (previously declared in C:\xamppu\htdocs\LocalGovtAssetMgt_App\backend\api\summary.php:27) in C:\xamppu\htdocs\LocalGovtAssetMgt_App\backend\api\verify_token.php on line 76
+[27-Mar-2025 20:54:24 Africa/Kampala] PHP Fatal error:  Cannot redeclare sendResponse() (previously declared in C:\xamppu\htdocs\LocalGovtAssetMgt_App\backend\api\summary.php:27) in C:\xamppu\htdocs\LocalGovtAssetMgt_App\backend\api\verify_token.php on line 76
+[27-Mar-2025 20:56:34 Africa/Kampala] PHP Fatal error:  Cannot redeclare sendResponse() (previously declared in C:\xamppu\htdocs\LocalGovtAssetMgt_App\backend\api\summary.php:27) in C:\xamppu\htdocs\LocalGovtAssetMgt_App\backend\api\verify_token.php on line 76
+[27-Mar-2025 20:59:36 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 20:59:36 Africa/Kampala] Attempting login for: admin@localgov.com
+[27-Mar-2025 21:00:21 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 21:00:21 Africa/Kampala] Attempting login for: admin@localgov.com
+[27-Mar-2025 21:04:14 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 21:04:14 Africa/Kampala] Attempting login for: admin@localgov.com
+[27-Mar-2025 21:07:39 Africa/Kampala] Database connection successful to local_govt_assets
+[27-Mar-2025 21:07:39 Africa/Kampala] Attempting login for: admin@localgov.com

@@ -1,12 +1,25 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Image, Alert } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  Animated, 
+  Image, 
+  StatusBar, 
+  useColorScheme 
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import api from '../services/api';
+import { lightColors, darkColors } from '../theme/colors';
+import config from '../config/config';
 
 const WelcomeScreen = () => {
   const navigation = useNavigation();
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(100)).current;
+  const isDarkMode = useColorScheme() === 'dark';
+  const colors = isDarkMode ? darkColors : lightColors;
 
   React.useEffect(() => {
     Animated.parallel([
@@ -25,15 +38,14 @@ const WelcomeScreen = () => {
 
   const showContactInfo = () => {
     Alert.alert(
-      'Contact Information',
-      'Email: asmart@gmail.com\nPhone: 0779654710',
-      [{ text: 'OK' }]
+      'Contact Details',
+      'Email: asmart@gmail.com\nPhone: +256779654710',
+      [{ text: 'OK', onPress: () => console.log('OK Pressed') }]
     );
   };
 
   const handleGetStarted = async () => {
     try {
-      // You can add any initial API checks here if needed
       navigation.navigate('Login');
     } catch (error) {
       Alert.alert(
@@ -48,8 +60,8 @@ const WelcomeScreen = () => {
     <View style={styles.container}>
       <Animated.View style={[styles.logoContainer, { opacity: fadeAnim }]}>
         <Image 
-          source={require('../../assets/logo1.png')}
-          style={styles.logo}
+          source={{ uri: config.logoUrl }} 
+          style={styles.logo} 
           resizeMode="contain"
         />
       </Animated.View>
@@ -81,8 +93,9 @@ const WelcomeScreen = () => {
       <View style={styles.developerSection}>
         <View style={styles.developerPhotoContainer}>
           <Image 
-            source={require('../../assets/ASIIMWE.png')}
-            style={styles.developerPhoto}
+            source={{ uri: config.developerPhotoUrl }} 
+            style={styles.developerPhoto} 
+            resizeMode="cover"
           />
         </View>
         <View style={styles.developerInfo}>
@@ -163,8 +176,8 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   logo: {
-    width: 150,
-    height: 150,
+    width: 100,
+    height: 100,
   },
   contentContainer: {
     alignItems: 'center',
@@ -181,7 +194,7 @@ const styles = StyleSheet.create({
     color: "#00008B",
     textAlign: 'center',
     marginBottom: 10,
-    lineHeight: 36, // Adjust the spacing between lines
+    lineHeight: 36,
   },
   motto: {
     fontSize: 16,
