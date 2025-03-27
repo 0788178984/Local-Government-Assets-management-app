@@ -9,11 +9,13 @@ import {
   Alert,
   useColorScheme,
   Image,
+  ActivityIndicator
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { lightColors, darkColors } from '../theme/colors';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getUserSession, clearAuthData } from '../utils/authUtils';
 import { useFocusEffect } from '@react-navigation/native';
+import config from '../config/config';
 
 const SettingsScreen = ({ navigation }) => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -21,11 +23,9 @@ const SettingsScreen = ({ navigation }) => {
   const [user, setUser] = useState(null);
   const [notifications, setNotifications] = useState(true);
   const [emailAlerts, setEmailAlerts] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadUserData();
-  }, []);
-
+  // Load user data when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       loadUserData();
@@ -34,158 +34,156 @@ const SettingsScreen = ({ navigation }) => {
 
   const loadUserData = async () => {
     try {
-      const userStr = await AsyncStorage.getItem('user');
-      console.log('Retrieved user string:', userStr); // Debug log
+      setIsLoading(true);
+      const userData = await getUserSession();
       
-      if (!userStr) {
-        throw new Error('No user data found');
+      if (userData) {
+        setUser(userData);
+      } else {
+        // Navigate back to login if no user data
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        });
       }
-
-      const userData = JSON.parse(userStr);
-      console.log('Parsed user data:', userData); // Debug log
-      
-      if (!userData || !userData.UserID) {
-        throw new Error('Invalid user data');
-      }
-
-      setUser(userData);
     } catch (error) {
       console.error('Error loading user data:', error);
-      // Don't show alert, just set default values
-      setUser({
-        Username: 'Not available',
-        Email: 'Not available',
-        Role: 'User'
-      });
+      Alert.alert('Error', 'Failed to load user data');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleLogout = async () => {
     Alert.alert(
       'Confirm Logout',
-      'Are you sure you want to logout?',
+      'Are you sure you want to log out?',
       [
-        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
         {
           text: 'Logout',
-          style: 'destructive',
           onPress: async () => {
             try {
-              await AsyncStorage.clear();
+              await clearAuthData();
+              // Navigate to Welcome screen and clear navigation history
               navigation.reset({
                 index: 0,
-                routes: [{ name: 'Login' }],
+                routes: [{ name: 'Welcome' }],
               });
             } catch (error) {
-              Alert.alert('Error', 'Failed to logout. Please try again.');
+              console.error('Error during logout:', error);
+              Alert.alert('Error', 'Failed to log out');
             }
-          },
-        },
+          }
+        }
       ]
     );
   };
 
-  const renderSettingItem = (icon, title, value, onPress, type = 'button') => (
-    <TouchableOpacity
-      style={[styles.settingItem, { borderBottomColor: colors.border }]}
-      onPress={onPress}
-    >
-      <View style={styles.settingLeft}>
-        <Icon name={icon} size={24} color={colors.primary} />
-        <Text style={[styles.settingText, { color: colors.text }]}>{title}</Text>
+  const navigateToEditProfile = () => {
+    navigation.navigate('EditProfile');
+  };
+
+  const navigateToChangePassword = () => {
+    navigation.navigate('ChangePassword');
+  };
+
+  const navigateToPrivacyPolicy = () => {
+    navigation.navigate('PrivacyPolicy');
+  };
+
+  const navigateToTermsOfService = () => {
+    navigation.navigate('TermsOfService');
+  };
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
-      {type === 'switch' ? (
-        <Switch
-          value={value}
-          onValueChange={onPress}
-          trackColor={{ false: colors.border, true: colors.primary }}
-          thumbColor={colors.background}
-        />
-      ) : (
-        <Icon name="chevron-right" size={24} color={colors.text} />
-      )}
-    </TouchableOpacity>
-  );
+    );
+  }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView>
-        <View style={[styles.profileSection, { backgroundColor: colors.card }]}>
-          <View style={styles.avatarContainer}>
-            {user?.ProfilePhoto ? (
-              <Image
-                source={{ 
-                  uri: `http://192.168.43.91/LocalGovtAssetMgt_App/backend/uploads/${user.ProfilePhoto}` 
-                }}
-                style={styles.profileImage}
-                defaultSource={require('../../assets/default-avatar.jpg')}
-              />
-            ) : (
-              <Icon name="account-circle" size={80} color={colors.primary} />
-            )}
-            {user?.Role && (
-              <View style={[styles.roleBadge, { backgroundColor: colors.primary }]}>
-                <Text style={styles.roleText}>{user.Role}</Text>
-              </View>
-            )}
-          </View>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.header}>
+        <View style={styles.profileSection}>
+          <Image
+            source={{ uri: user?.ProfilePhoto || config.defaultAvatarUrl }}
+            style={styles.profileImage}
+          />
           <View style={styles.profileInfo}>
-            <Text style={[styles.userName, { color: colors.text }]}>
-              {user?.Username || 'Not available'}
-            </Text>
-            <Text style={[styles.userEmail, { color: colors.text }]}>
-              {user?.Email || 'Not available'}
-            </Text>
+            <Text style={[styles.userName, { color: colors.text }]}>{user?.Username || 'User'}</Text>
+            <Text style={[styles.userEmail, { color: colors.text }]}>{user?.Email || 'email@example.com'}</Text>
+            <Text style={[styles.userRole, { color: colors.text }]}>{user?.Role || 'Role'}</Text>
           </View>
         </View>
+      </View>
 
-        <View style={styles.settingsGroup}>
-          <Text style={[styles.groupTitle, { color: colors.text }]}>Account Settings</Text>
-          {renderSettingItem('person', 'Edit Profile', null, () => navigation.navigate('EditProfile'))}
-          {renderSettingItem('lock', 'Change Password', null, () => navigation.navigate('ChangePassword'))}
-        </View>
-
-        <View style={styles.settingsGroup}>
-          <Text style={[styles.groupTitle, { color: colors.text }]}>Notifications</Text>
-          {renderSettingItem(
-            'notifications',
-            'Push Notifications',
-            notifications,
-            () => setNotifications(!notifications),
-            'switch'
-          )}
-          {renderSettingItem(
-            'email',
-            'Email Alerts',
-            emailAlerts,
-            () => setEmailAlerts(!emailAlerts),
-            'switch'
-          )}
-        </View>
-
-        <View style={styles.settingsGroup}>
-          <Text style={[styles.groupTitle, { color: colors.text }]}>System</Text>
-          {renderSettingItem('code', 'API Connection Test', null, () =>
-            navigation.navigate('ApiTest')
-          )}
-          {renderSettingItem('info', 'App Version', null, () => Alert.alert('Version', '1.0.0'))}
-          {renderSettingItem('description', 'Terms of Service', null, () => 
-            navigation.navigate('TermsOfService')
-          )}
-          {renderSettingItem('privacy-tip', 'Privacy Policy', null, () => 
-            navigation.navigate('PrivacyPolicy')
-          )}
-        </View>
-
-        <TouchableOpacity
-          style={[styles.logoutButton, { backgroundColor: colors.error }]}
-          onPress={handleLogout}
-        >
-          <Icon name="logout" size={24} color="#fff" />
-          <Text style={styles.logoutText}>Logout</Text>
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Account Settings</Text>
+        
+        <TouchableOpacity style={styles.menuItem} onPress={navigateToEditProfile}>
+          <Icon name="person" size={24} color={colors.text} />
+          <Text style={[styles.menuText, { color: colors.text }]}>Edit Profile</Text>
+          <Icon name="chevron-right" size={24} color={colors.text} />
         </TouchableOpacity>
-      </ScrollView>
-    </View>
+
+        <TouchableOpacity style={styles.menuItem} onPress={navigateToChangePassword}>
+          <Icon name="lock" size={24} color={colors.text} />
+          <Text style={[styles.menuText, { color: colors.text }]}>Change Password</Text>
+          <Icon name="chevron-right" size={24} color={colors.text} />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Notifications</Text>
+        
+        <View style={styles.menuItem}>
+          <Icon name="notifications" size={24} color={colors.text} />
+          <Text style={[styles.menuText, { color: colors.text }]}>Push Notifications</Text>
+          <Switch
+            value={notifications}
+            onValueChange={setNotifications}
+            trackColor={{ false: colors.border, true: colors.primary }}
+          />
+        </View>
+
+        <View style={styles.menuItem}>
+          <Icon name="email" size={24} color={colors.text} />
+          <Text style={[styles.menuText, { color: colors.text }]}>Email Alerts</Text>
+          <Switch
+            value={emailAlerts}
+            onValueChange={setEmailAlerts}
+            trackColor={{ false: colors.border, true: colors.primary }}
+          />
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Legal</Text>
+        
+        <TouchableOpacity style={styles.menuItem} onPress={navigateToPrivacyPolicy}>
+          <Icon name="security" size={24} color={colors.text} />
+          <Text style={[styles.menuText, { color: colors.text }]}>Privacy Policy</Text>
+          <Icon name="chevron-right" size={24} color={colors.text} />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.menuItem} onPress={navigateToTermsOfService}>
+          <Icon name="description" size={24} color={colors.text} />
+          <Text style={[styles.menuText, { color: colors.text }]}>Terms of Service</Text>
+          <Icon name="chevron-right" size={24} color={colors.text} />
+        </TouchableOpacity>
+      </View>
+
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <Icon name="logout" size={24} color="#fff" />
+        <Text style={styles.logoutText}>Logout</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 };
 
@@ -193,94 +191,77 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  profileSection: {
-    padding: 20,
+  centerContent: {
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
-    borderRadius: 12,
-    margin: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
-  avatarContainer: {
-    position: 'relative',
-    marginBottom: 10,
+  header: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e1e1e1',
+  },
+  profileSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  profileImage: {
+    width: 80,
+    height: 80,
     borderRadius: 40,
-    overflow: 'hidden',
-  },
-  roleBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: -10,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  roleText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
+    marginRight: 15,
   },
   profileInfo: {
-    alignItems: 'center',
+    flex: 1,
   },
   userName: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginTop: 10,
+    marginBottom: 4,
   },
   userEmail: {
-    fontSize: 16,
-    marginTop: 5,
-    opacity: 0.8,
+    fontSize: 14,
+    marginBottom: 4,
   },
-  settingsGroup: {
-    marginBottom: 20,
+  userRole: {
+    fontSize: 14,
+    opacity: 0.7,
   },
-  groupTitle: {
+  section: {
+    marginTop: 20,
+    paddingHorizontal: 20,
+  },
+  sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    marginLeft: 20,
-    marginBottom: 10,
+    marginBottom: 15,
   },
-  settingItem: {
+  menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 15,
+    paddingVertical: 12,
     borderBottomWidth: 1,
+    borderBottomColor: '#e1e1e1',
   },
-  settingLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 15,
-  },
-  settingText: {
+  menuText: {
+    flex: 1,
+    marginLeft: 15,
     fontSize: 16,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 15,
+    backgroundColor: '#ff3b30',
     marginHorizontal: 20,
-    marginVertical: 20,
-    borderRadius: 8,
-    gap: 10,
+    marginVertical: 30,
+    padding: 15,
+    borderRadius: 10,
   },
   logoutText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  profileImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#ddd', // Placeholder color
+    marginLeft: 10,
   },
 });
 

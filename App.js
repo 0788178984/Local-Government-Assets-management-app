@@ -1,11 +1,23 @@
 // Import necessary dependencies
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
-import { useColorScheme, StyleSheet, View, SafeAreaView, StatusBar } from 'react-native';
+import { 
+  useColorScheme, 
+  StyleSheet, 
+  View, 
+  SafeAreaView, 
+  StatusBar, 
+  Platform,
+  Animated,
+  LogBox,
+  ActivityIndicator,
+  Text 
+} from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { lightColors, darkColors } from './src/theme/colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from './src/config/api';
+import { isAuthenticated, clearAuthData, STORAGE_KEYS } from './src/utils/authUtils';
 
 // Import screen components
 import LoginScreen from './src/screens/LoginScreen';
@@ -35,12 +47,29 @@ import ApiTestScreen from './src/screens/ApiTestScreen';
 import ScheduleDetails from './src/screens/ScheduleDetails';
 import TermsOfServiceScreen from './src/screens/TermsOfServiceScreen';
 import PrivacyPolicyScreen from './src/screens/PrivacyPolicyScreen';
+import AuthLoadingScreen from './src/screens/AuthLoadingScreen';
 
-// Create a stack navigator
+// Ignore specific harmless warnings
+LogBox.ignoreLogs([
+  'Warning: componentWillReceiveProps has been renamed',
+  'Warning: componentWillMount has been renamed',
+  'Animated: `useNativeDriver` was not specified'
+]);
+
 const Stack = createStackNavigator();
 
+// Custom loading component
+const LoadingScreen = () => {
+  return (
+    <View style={styles.loadingContainer}>
+      <ActivityIndicator size="large" color="#3498db" />
+      <Text style={styles.loadingText}>Loading...</Text>
+    </View>
+  );
+};
+
 const AppNavigator = () => {
-  const [initialRoute, setInitialRoute] = useState('Welcome');
+  const [initialRoute, setInitialRoute] = useState('AuthLoading');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -49,24 +78,12 @@ const AppNavigator = () => {
 
   const checkAuthState = async () => {
     try {
-      // Always set Welcome as initial screen for first-time users
-      const hasLaunched = await AsyncStorage.getItem('hasLaunched');
-      
-      if (!hasLaunched) {
-        setInitialRoute('Welcome');
-        // Set hasLaunched flag for future app launches
-        await AsyncStorage.setItem('hasLaunched', 'true');
-      } else {
-        // For subsequent launches, check if user is logged in
-        const userData = await AsyncStorage.getItem('user');
-        if (userData) {
-          setInitialRoute('Dashboard');
-        } else {
-          setInitialRoute('Login');
-        }
-      }
+      const authenticated = await isAuthenticated();
+      setInitialRoute(authenticated ? 'Dashboard' : 'Welcome');
     } catch (error) {
       console.error('Error checking auth state:', error);
+      // On error, clear auth data and start fresh
+      await clearAuthData();
       setInitialRoute('Welcome');
     } finally {
       setIsLoading(false);
@@ -74,252 +91,56 @@ const AppNavigator = () => {
   };
 
   if (isLoading) {
-    return null;
+    return <LoadingScreen />;
   }
 
   return (
-    <Stack.Navigator
+    <Stack.Navigator 
       initialRouteName={initialRoute}
       screenOptions={{
-        headerShown: false
+        headerShown: false,
+        cardStyle: { backgroundColor: 'white' }
       }}
     >
+      <Stack.Screen name="AuthLoading" component={AuthLoadingScreen} />
       <Stack.Screen name="Welcome" component={WelcomeScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Signup" component={SignupScreen} />
       <Stack.Screen name="Dashboard" component={DashboardScreen} />
-      <Stack.Screen 
-        name="Signup" 
-        component={SignupScreen} 
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen 
-        name="MaintenanceTeams" 
-        component={MaintenanceTeamsScreen}
-        options={{
-          title: 'Maintenance Teams',
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen 
-        name="Teams" 
-        component={TeamsScreen}
-        options={{
-          title: 'Maintenance Teams',
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen 
-        name="AddTeam" 
-        component={AddTeamScreen}
-        options={{
-          title: 'Add New Team',
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen 
-        name="EditTeam" 
-        component={EditTeamScreen}
-        options={{
-          title: 'Edit Team',
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen 
-        name="MaintenanceRecords" 
-        component={MaintenanceRecordsScreen}
-        options={{
-          title: 'Maintenance Records',
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen 
-        name="MaintenanceSchedules" 
-        component={MaintenanceSchedulesScreen}
-        options={{
-          title: 'Maintenance Schedules',
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen 
-        name="AddRecord" 
-        component={AddRecordScreen}
-        options={{
-          title: 'Add Maintenance Record',
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen 
-        name="Assets" 
-        component={AssetsScreen}
-        options={{
-          title: 'Assets',
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen 
-        name="AddAsset" 
-        component={AddAssetScreen}
-        options={{
-          title: 'Add New Asset',
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen 
-        name="EditAsset" 
-        component={EditAssetScreen}
-        options={{
-          title: 'Edit Asset',
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen 
-        name="Reports" 
-        component={ReportsScreen}
-        options={{
-          title: 'Reports',
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen 
-        name="GenerateReport" 
-        component={GenerateReport}
-        options={{
-          title: 'Generate Report',
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen 
-        name="ViewReport" 
-        component={ViewReport}
-        options={{
-          title: 'View Report',
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen 
-        name="Settings" 
-        component={SettingsScreen}
-        options={{
-          title: 'Settings',
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen 
-        name="EditProfile" 
-        component={EditProfile}
-        options={{
-          title: 'Edit Profile',
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen 
-        name="ChangePassword" 
-        component={ChangePassword}
-        options={{
-          title: 'Change Password',
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen 
-        name="Maintenance" 
-        component={MaintenanceScreen}
-        options={{
-          title: 'Maintenance',
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen 
-        name="AddSchedule" 
-        component={AddScheduleScreen}
-        options={{
-          title: 'Add Maintenance Schedule',
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen 
-        name="ApiTest" 
-        component={ApiTestScreen}
-        options={{
-          title: 'API Connection Test',
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen 
-        name="MaintenanceDetails" 
-        component={MaintenanceDetails}
-        options={{
-          title: 'Maintenance Details',
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen 
-        name="ScheduleDetails" 
-        component={ScheduleDetails}
-        options={{
-          title: 'Schedule Details',
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen 
-        name="TermsOfService" 
-        component={TermsOfServiceScreen}
-        options={{
-          title: 'Terms of Service',
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen 
-        name="PrivacyPolicy" 
-        component={PrivacyPolicyScreen}
-        options={{
-          title: 'Privacy Policy',
-          headerShown: false,
-        }}
-      />
+      <Stack.Screen name="MaintenanceTeams" component={MaintenanceTeamsScreen} />
+      <Stack.Screen name="MaintenanceRecords" component={MaintenanceRecordsScreen} />
+      <Stack.Screen name="MaintenanceSchedules" component={MaintenanceSchedulesScreen} />
+      <Stack.Screen name="MaintenanceDetails" component={MaintenanceDetails} />
+      <Stack.Screen name="AddTeam" component={AddTeamScreen} />
+      <Stack.Screen name="AddRecord" component={AddRecordScreen} />
+      <Stack.Screen name="AddSchedule" component={AddScheduleScreen} />
+      <Stack.Screen name="Assets" component={AssetsScreen} />
+      <Stack.Screen name="AddAsset" component={AddAssetScreen} />
+      <Stack.Screen name="EditAsset" component={EditAssetScreen} />
+      <Stack.Screen name="Reports" component={ReportsScreen} />
+      <Stack.Screen name="GenerateReport" component={GenerateReport} />
+      <Stack.Screen name="ViewReport" component={ViewReport} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfile} />
+      <Stack.Screen name="ChangePassword" component={ChangePassword} />
+      <Stack.Screen name="Maintenance" component={MaintenanceScreen} />
+      <Stack.Screen name="Teams" component={TeamsScreen} />
+      <Stack.Screen name="EditTeam" component={EditTeamScreen} />
+      <Stack.Screen name="ApiTest" component={ApiTestScreen} />
+      <Stack.Screen name="ScheduleDetails" component={ScheduleDetails} />
+      <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
+      <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
     </Stack.Navigator>
   );
 };
 
 const App = () => {
   const colorScheme = useColorScheme();
-  const [isFirstLaunch, setIsFirstLaunch] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    checkFirstLaunch();
-    checkAuthState();
+    // Disable the Animated warning
+    LogBox.ignoreLogs(['Animated: `useNativeDriver`']);
   }, []);
-
-  const checkAuthState = async () => {
-    try {
-      const userData = await AsyncStorage.getItem('user');
-      setIsAuthenticated(!!userData);
-    } catch (error) {
-      console.error('Error checking auth state:', error);
-    }
-  };
-
-  const checkFirstLaunch = async () => {
-    try {
-      const hasLaunched = await AsyncStorage.getItem('hasLaunched');
-      if (hasLaunched === null) {
-        setIsFirstLaunch(true);
-        await AsyncStorage.setItem('hasLaunched', 'true');
-      } else {
-        setIsFirstLaunch(false);
-      }
-    } catch (error) {
-      console.error('Error checking first launch:', error);
-      setIsFirstLaunch(false);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (isLoading) {
-    return null;
-  }
 
   const theme = colorScheme === 'dark' ? {
     ...DarkTheme,
@@ -345,6 +166,16 @@ const App = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 18,
+    color: '#3498db',
+    marginTop: 10,
   },
 });
 

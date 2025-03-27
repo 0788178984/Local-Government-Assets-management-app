@@ -3,15 +3,12 @@ import {
   View,
   Text,
   TextInput,
-  StyleSheet,
   TouchableOpacity,
+  StyleSheet,
   ScrollView,
-  Switch,
   Alert,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  useColorScheme
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { lightColors, darkColors } from '../theme/colors';

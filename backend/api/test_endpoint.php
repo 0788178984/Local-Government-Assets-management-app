@@ -11,6 +11,9 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+// Include server configuration
+include_once './config/server_config.php';
+
 // Include database connection
 include_once './config/database.php';
 
@@ -23,6 +26,13 @@ $response = array(
         "host" => $_SERVER['HTTP_HOST'] ?? 'unknown',
         "software" => $_SERVER['SERVER_SOFTWARE'] ?? 'unknown',
         "request_method" => $_SERVER['REQUEST_METHOD'] ?? 'unknown'
+    ),
+    "config" => array(
+        "base_url" => SERVER_BASE_URL,
+        "api_url" => SERVER_API_URL,
+        "uploads_url" => SERVER_UPLOADS_URL,
+        "server_ip" => $server_config['ip'],
+        "server_port" => $server_config['port']
     )
 );
 

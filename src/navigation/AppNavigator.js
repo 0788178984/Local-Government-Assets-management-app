@@ -26,6 +26,9 @@ import MaintenanceDetails from '../screens/MaintenanceDetails';
 import TermsOfServiceScreen from '../screens/TermsOfServiceScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 import EditProfile from '../screens/EditProfile';
+import SettingsScreen from '../screens/SettingsScreen';
+import AuthLoadingScreen from '../screens/AuthLoadingScreen';
+import DashboardBridge from '../screens/DashboardBridge';
 
 const Stack = createStackNavigator();
 
@@ -44,7 +47,22 @@ const AppNavigator = () => {
   };
 
   return (
-    <Stack.Navigator screenOptions={screenOptions}>
+    <Stack.Navigator initialRouteName="AuthLoading" screenOptions={screenOptions}>
+      {/* Authentication Loading Screen */}
+      <Stack.Screen 
+        name="AuthLoading" 
+        component={AuthLoadingScreen} 
+        options={{ headerShown: false }} 
+      />
+      
+      {/* Dashboard Bridge - helps navigate to the correct Dashboard */}
+      <Stack.Screen 
+        name="DashboardBridge" 
+        component={DashboardBridge} 
+        options={{ headerShown: false }} 
+      />
+      
+      {/* Auth Screens */}
       <Stack.Screen 
         name="Welcome" 
         component={WelcomeScreen} 
@@ -60,12 +78,15 @@ const AppNavigator = () => {
         component={SignupScreen} 
         options={{ headerShown: false }} 
       />
+      
+      {/* App Screens */}
       <Stack.Screen 
         name="Dashboard" 
         component={Dashboard}
         options={{
-          headerLeft: null,
-          gestureEnabled: false,
+          title: 'Dashboard',
+          headerLeft: null, // Prevent going back
+          gestureEnabled: false, // Disable swipe back
         }}
       />
       <Stack.Screen 
@@ -170,6 +191,14 @@ const AppNavigator = () => {
         component={EditProfile} 
         options={{ 
           title: 'Edit Profile',
+          headerShown: true
+        }} 
+      />
+      <Stack.Screen 
+        name="Settings" 
+        component={SettingsScreen} 
+        options={{ 
+          title: 'Settings',
           headerShown: true
         }} 
       />

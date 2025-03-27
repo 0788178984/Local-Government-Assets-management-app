@@ -1,15 +1,17 @@
 // API Configuration
+import config from './config';
+
 export const API_CONFIG = {
     // Primary API URL for physical device testing
-    PRIMARY_URL: 'http://192.168.43.91/LocalGovtAssetMgt_App/backend/api',
+    PRIMARY_URL: config.API_URL,
     
     // Alternate URL if primary fails
-    ALTERNATE_URL: 'http://192.168.43.91/LocalGovtAssetMgt_App/backend/api',
+    ALTERNATE_URL: config.API_URL,
     
     // Additional URLs
     URLS: {
         LOCAL: 'http://localhost/LocalGovtAssetMgt_App/backend/api',
-        IP: 'http://192.168.43.91/LocalGovtAssetMgt_App/backend/api'
+        IP: config.API_URL
     },
     
     // Timeout in milliseconds
@@ -17,7 +19,7 @@ export const API_CONFIG = {
     
     // Endpoints
     ENDPOINTS: {
-        LOGIN: '/login.php',
+        LOGIN: '/login_fix.php', // Use the working login endpoint
         VERIFY_TOKEN: '/verify_token.php',
         TEST_CONNECTION: '/test_connection.php'
     }

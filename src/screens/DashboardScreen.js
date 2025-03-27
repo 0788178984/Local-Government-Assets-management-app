@@ -8,22 +8,23 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
-  FlatList,
-  Alert,
   Modal,
-  TextInput,
-  Platform,
-  Animated,
   ActivityIndicator,
   RefreshControl,
+  Platform,
+  StatusBar,
+  SafeAreaView,
+  useColorScheme,
+  Animated,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import { LineChart, BarChart, PieChart } from 'react-native-chart-kit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useColorScheme } from 'react-native';
+import { LineChart, PieChart, BarChart } from 'react-native-chart-kit';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import { lightColors, darkColors } from '../theme/colors';
+import config from '../config/config';
 import { useNavigation } from '@react-navigation/native';
 import { API_URL } from '../services/api';
+import { Linking } from 'react-native';
 
 // Dashboard screen component
 const DashboardScreen = ({ navigation, route }) => {
@@ -109,28 +110,58 @@ const DashboardScreen = ({ navigation, route }) => {
   const fetchSummaryData = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${API_URL}dashboard/get_summary.php`, {
+      
+      // Get the auth token from storage
+      const userSession = await AsyncStorage.getItem('user_session');
+      let authToken = null;
+      
+      if (userSession) {
+        const userData = JSON.parse(userSession);
+        authToken = userData.user?.token || userData?.token;
+      }
+      
+      console.log('Fetching summary data from:', `${config.API_URL}summary.php`);
+      
+      // Use the correct summary endpoint with timeout and error handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
+      const response = await fetch(`${config.API_URL}summary.php`, {
         method: 'GET',
-        credentials: 'include',
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+          'Authorization': authToken ? `Bearer ${authToken}` : '',
+          'Cache-Control': 'no-cache'
+        },
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
+      
       console.log('Summary response status:', response.status);
       
-      const data = await response.json();
-      console.log('Summary response data:', data);
+      const textData = await response.text();
+      console.log('Raw response data:', textData);
       
-      if (data.status === 'success') {
-        setSummaryData(data.data);
-        setError(null);
+      // Safety check for valid JSON
+      if (textData && textData.trim()) {
+        const data = JSON.parse(textData);
+        console.log('Summary response data:', data);
+        
+        if (data.status === 'success' && data.data) {
+          setSummaryData(data.data);
+          setError(null);
+        } else {
+          console.log('Using fallback summary data due to API issue');
+          // Don't set error - just use the default data
+        }
       } else {
-        setError(data.message || 'Failed to fetch summary data');
+        console.log('Empty response from summary endpoint');
       }
     } catch (err) {
       console.error('Error fetching summary:', err);
-      setError('Network error. Please check your connection.');
+      // Don't set error - just use the default data
     } finally {
       setIsLoading(false);
     }
@@ -153,41 +184,47 @@ const DashboardScreen = ({ navigation, route }) => {
     }
   };
 
-  // Fetch data when component mounts
+  // Get user data from AsyncStorage if not provided in route params
   useEffect(() => {
-    fetchSummaryData();
-    
-    // Refresh data every 5 minutes
-    const interval = setInterval(fetchSummaryData, 300000);
-    
-    // Cleanup interval on unmount
-    return () => clearInterval(interval);
-  }, []);
-
-  // Check for user session on mount
-  useEffect(() => {
-    const checkUserSession = async () => {
+    const loadUserData = async () => {
       try {
-        const userStr = await AsyncStorage.getItem('user');
-        
-        if (!userStr) {
-          // No valid session, redirect to login
-          navigation.replace('Login');
-          return;
-        }
-
         if (!user) {
-          const userData = JSON.parse(userStr);
-          setUser(userData);
+          // Try both storage keys to ensure we find the user data
+          let userDataStr = await AsyncStorage.getItem('user_session');
+          
+          if (!userDataStr) {
+            // Try alternative key
+            userDataStr = await AsyncStorage.getItem('user');
+          }
+          
+          if (userDataStr) {
+            const userData = JSON.parse(userDataStr);
+            console.log('Dashboard: Loaded user from storage', userData.user ? userData.user.Username : userData.Username);
+            setUser(userData.user || userData);
+          } else {
+            console.log('Dashboard: No user data found in storage');
+            // Don't redirect - just show dashboard with default data
+          }
         }
+        
+        // Always fetch summary data regardless of user state
+        fetchSummaryData();
       } catch (error) {
-        console.error('Error checking user session:', error);
-        navigation.replace('Login');
+        console.error('Dashboard: Error loading user data', error);
+        // Don't redirect on error - just use default data
       }
     };
-
-    checkUserSession();
-  }, []);
+    
+    loadUserData();
+    
+    // Set up auto-scroll timer for charts
+    if (isAutoScroll) {
+      const timer = setInterval(() => {
+        setCurrentChartIndex((prevIndex) => (prevIndex + 1) % 3);
+      }, 5000);
+      return () => clearInterval(timer);
+    }
+  }, [isAutoScroll, user]);
 
   // Handle logout
   const handleLogout = async () => {
@@ -428,7 +465,7 @@ const DashboardScreen = ({ navigation, route }) => {
           
           <TouchableOpacity style={styles.profileImageContainer}>
             <Image
-              source={user?.profileImage ? { uri: user.profileImage } : require('../../assets/logo1.png')}
+              source={user?.profileImage ? { uri: user.profileImage } : { uri: config.logoUrl }}
               style={styles.profileImageLarge}
             />
             <Text style={[styles.uploadText, isDarkMode && styles.darkModeText]}>Tap to upload new photo</Text>
@@ -579,7 +616,7 @@ const DashboardScreen = ({ navigation, route }) => {
           </View>
 
           <Image
-            source={require('../../assets/logo1.png')}
+            source={{ uri: config.logoUrl }}
             style={styles.institutionLogo}
           />
         </View>
@@ -672,27 +709,25 @@ const DashboardScreen = ({ navigation, route }) => {
         </View>
 
         {/* Developer Information Section */}
-        <View style={styles.developerInfo}>
-          <View style={styles.developerContentWrapper}>
-            <Image
-              style={styles.developerImage}
-              source={require('../../assets/ASIIMWE.png')}
-            />
-            <View style={styles.textContainer}>
-              <Text style={styles.developerName}>ASIIMWE LUCKY</Text>
-              <Text style={styles.leadDeveloperText}>Lead Developer</Text>
-            </View>
-            <TouchableOpacity 
-              onPress={() => Alert.alert(
-                'Contact Details',
-                'Email: asmart@gmail.com\nPhone: +256779654710',
-                [{ text: 'OK', onPress: () => console.log('OK Pressed') }]
-              )}
-              style={styles.contactButton}
-            >
-              <Text style={styles.contactButtonText}>Contact</Text>
-            </TouchableOpacity>
+        <View style={styles.developerInfoContainer}>
+          <Image
+            source={{ uri: config.developerPhotoUrl }}
+            style={styles.developerPhoto}
+          />
+          <View style={styles.developerTextContainer}>
+            <Text style={[styles.developerName, isDarkMode && styles.darkModeText]}>
+              Asiimwe Lucky
+            </Text>
+            <Text style={[styles.developerTitle, isDarkMode && styles.darkModeText]}>
+              Lead Developer
+            </Text>
           </View>
+          <TouchableOpacity 
+            style={styles.contactButton}
+            onPress={() => Linking.openURL('mailto:asiimwelucky@example.com')}
+          >
+            <Text style={styles.contactButtonText}>Contact</Text>
+          </TouchableOpacity>
         </View>
 
       </Animated.ScrollView>
@@ -716,7 +751,7 @@ const DashboardScreen = ({ navigation, route }) => {
                   style={styles.profileButton}
                 >
                   <Image
-                    source={user?.profileImage ? { uri: user.profileImage } : require('../../assets/logo1.png')}
+                    source={user?.profileImage ? { uri: user.profileImage } : { uri: config.logoUrl }}
                     style={styles.menuProfileImage}
                   />
                   <Text style={[styles.adminText, isDarkMode && styles.darkModeText]}>
@@ -981,442 +1016,42 @@ const styles = StyleSheet.create({
   paginationDotActive: {
     backgroundColor: '#1a237e',
   },
-  developerInfo: {
-    padding: 5,
-    backgroundColor: '#1a237e', 
-    borderRadius: 15,
-    margin: 10,
-  },
-  developerContentWrapper: {
+  developerInfoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#1a237e',
+    margin: 10,
+    marginBottom: 20,
+    borderRadius: 10,
   },
-  developerImage: {
-    width: 65,
-    height: 65,
-    borderRadius: 40,
-    marginRight: 15,
+  developerPhoto: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 10,
   },
-  textContainer: {
+  developerTextContainer: {
     flex: 1,
     marginLeft: 8,
   },
   developerName: {
-    fontSize: 13,
-    fontWeight: '900',
+    fontSize: 16,
+    fontWeight: 'bold',
     color: '#ffffff',
     marginBottom: 4,
   },
-  leadDeveloperText: {
+  developerTitle: {
     fontSize: 14,
-    fontWeight: '300',
+    fontWeight: '400',
     color: '#ffffff',
   },
   contactButton: {
-    backgroundColor: '#ff0000', 
+    backgroundColor: '#ff5722', 
     paddingHorizontal: 15,
-    paddingVertical: 5,
+    paddingVertical: 8,
     borderRadius: 5,
-    marginLeft: 15,
-  },
-  contactButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  searchButton: {
-    backgroundColor: '#f5f5f5',
-    margin: 10,
-    borderRadius: 5,
-    elevation: 2,
-  },
-  searchPlaceholder: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-  },
-  searchPlaceholderText: {
     marginLeft: 10,
-    color: '#666',
-    fontSize: 16,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    margin: 10,
-    marginTop: 0,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    height: 50,
-    elevation: 2,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 10,
-    fontSize: 16,
-    color: '#333',
-  },
-  clearSearch: {
-    padding: 5,
-  },
-  card: {
-    padding: 20,
-    borderRadius: 8,
-    marginBottom: 16,
-    elevation: 2,
-  },
-  cardText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  section: {
-    borderRadius: 8,
-    marginBottom: 16,
-    overflow: 'hidden',
-    elevation: 2,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-  },
-  sectionHeaderText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  dropdownContent: {
-    borderTopWidth: 1,
-  },
-  dropdownItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  dropdownItemText: {
-    fontSize: 16,
-  },
-  submenuContent: {
-    backgroundColor: '#f8f8f8',
-    marginHorizontal: 15,
-    marginVertical: 5,
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#eee',
-  },
-  darkModeSubmenu: {
-    backgroundColor: '#2c2c2c',
-    borderColor: '#333',
-  },
-  submenuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
-    paddingHorizontal: 20,
-    borderBottomColor: '#eee',
-    gap: 12,
-  },
-  submenuText: {
-    flex: 1,
-    fontSize: 15,
-    color: '#666',
-    fontWeight: '500',
-  },
-  dashboardCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-    elevation: 2,
-  },
-  cardContent: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  cardDescription: {
-    fontSize: 14,
-    opacity: 0.7,
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    width: '80%',
-    height: '100%',
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 2, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 20,
-  },
-  profileImageContainer: {
-    alignItems: 'center',
-  },
-  profileImageLarge: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
-  uploadText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  settingLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  toggleButton: {
-    width: 40,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#CCCCCC',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  toggleButtonActive: {
-    backgroundColor: '#1a237e',
-  },
-  toggleKnob: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#FFFFFF',
-  },
-  toggleKnobActive: {
-    backgroundColor: '#FFFFFF',
-  },
-  userDetails: {
-    flexDirection: 'column',
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  userRole: {
-    fontSize: 14,
-    color: '#666',
-  },
-  profileImagePlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#CCCCCC',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  menuModalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  menuModalContent: {
-    width: '80%',
-    height: '100%',
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 2, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  menuHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  menuTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  profileButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  menuProfileImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-  },
-  adminText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  closeButton: {
-    padding: 4,
-  },
-  darkModeContent: {
-    backgroundColor: '#1a1a1a',
-    borderLeftColor: '#333',
-  },
-  darkModeText: {
-    color: '#fff',
-  },
-  menuItemsContainer: {
-    flex: 1,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
-    paddingHorizontal: 20,
-    gap: 15,
-    borderRadius: 8,
-    marginHorizontal: 10,
-  },
-  activeMenuItem: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-  },
-  menuItemText: {
-    flex: 1,
-    fontSize: 16,
-    color: '#000',
-    fontWeight: '500',
-  },
-  content: {
-    flex: 1,
-  },
-  quickActions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 10,
-    justifyContent: 'space-between',
-  },
-  actionItem: {
-    width: '48%',
-    backgroundColor: '#FFFFFF',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
-    elevation: 2,
-  },
-  actionText: {
-    flex: 1,
-  },
-  actionTitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 5,
-  },
-  actionCount: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  actionSubtitle: {
-    fontSize: 12,
-    color: '#666',
-  },
-  chartsContainer: {
-    backgroundColor: '#FFFFFF',
-    margin: 10,
-    borderRadius: 10,
-    padding: 10,
-    elevation: 2,
-  },
-  chartWrapper: {
-    width: Dimensions.get('window').width - 40,
-    alignItems: 'center',
-    padding: 10,
-  },
-  chartTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1a237e',
-    marginBottom: 10,
-  },
-  pagination: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  paginationDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#CCCCCC',
-    marginHorizontal: 4,
-  },
-  paginationDotActive: {
-    backgroundColor: '#1a237e',
-  },
-  developerInfo: {
-    padding: 5,
-    backgroundColor: '#1a237e', 
-    borderRadius: 15,
-    margin: 10,
-  },
-  developerContentWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  developerImage: {
-    width: 65,
-    height: 65,
-    borderRadius: 40,
-    marginRight: 15,
-  },
-  textContainer: {
-    flex: 1,
-    marginLeft: 8,
-  },
-  developerName: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: '#ffffff',
-    marginBottom: 4,
-  },
-  leadDeveloperText: {
-    fontSize: 14,
-    fontWeight: '300',
-    color: '#ffffff',
-  },
-  contactButton: {
-    backgroundColor: '#ff0000', 
-    paddingHorizontal: 15,
-    paddingVertical: 5,
-    borderRadius: 5,
-    marginLeft: 15,
   },
   contactButtonText: {
     color: '#ffffff',

@@ -1,8 +1,46 @@
 // API Configuration
 const config = {
-    // API URLs - updated for physical device testing
-    API_URL: 'http://192.168.43.91/LocalGovtAssetMgt_App/backend/api/',
-    API_URL_IP: 'http://192.168.43.91/LocalGovtAssetMgt_App/backend/api/',
+    // Server information - SINGLE SOURCE OF TRUTH
+    SERVER: {
+        IP: '10.20.1.41',
+        BASE_PATH: '/LocalGovtAssetMgt_App',
+        PORT: '80' // Default HTTP port
+    },
+    
+    // Derived URLs (calculated from SERVER config)
+    get API_BASE_URL() {
+        return `http://${this.SERVER.IP}${this.SERVER.PORT !== '80' ? ':' + this.SERVER.PORT : ''}${this.SERVER.BASE_PATH}`;
+    },
+    
+    get API_URL() {
+        return `${this.API_BASE_URL}/backend/api/`;
+    },
+    
+    get API_URL_IP() {
+        return this.API_URL;
+    },
+    
+    get UPLOADS_URL() {
+        return `${this.API_BASE_URL}/backend/uploads/`;
+    },
+    
+    // Image base URL for accessing images via network
+    get imageBaseUrl() {
+        return `${this.API_BASE_URL}/backend/images/`;
+    },
+    
+    // Image assets URLs
+    get logoUrl() {
+        return `${this.imageBaseUrl}logo1.png`;
+    },
+    
+    get developerPhotoUrl() {
+        return `${this.imageBaseUrl}ASIIMWE.png`;
+    },
+    
+    get defaultAvatarUrl() {
+        return `${this.imageBaseUrl}default-avatar.jpg`;
+    },
     
     // API Timeouts
     TIMEOUT: 15000, // 15 seconds
@@ -41,9 +79,15 @@ const config = {
 };
 
 // For debugging
+console.log('Current server configuration:', {
+    ip: config.SERVER.IP,
+    basePath: config.SERVER.BASE_PATH,
+    port: config.SERVER.PORT
+});
+
 console.log('Available API URLs:', {
-    ip: config.API_URL_IP,
-    localhost: config.API_URL
+    apiUrl: config.API_URL,
+    uploadsUrl: config.UPLOADS_URL
 });
 
 export default config;

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { lightColors, darkColors } from '../theme/colors';
+import config from '../config/config';
 
 const EditProfileScreen = ({ navigation }) => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -49,7 +50,7 @@ const EditProfileScreen = ({ navigation }) => {
       const userData = JSON.parse(userString);
       
       const response = await fetch(
-        'http://192.168.43.91/LocalGovtAssetMgt_App/backend/api/users/update_profile.php',
+        `${config.API_URL}users/update_profile.php`,
         {
           method: 'POST',
           headers: {
@@ -202,4 +203,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EditProfileScreen; 
+export default EditProfileScreen;

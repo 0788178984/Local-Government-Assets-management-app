@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TextInput, 
+  TouchableOpacity, 
   ScrollView,
   Alert,
-  useColorScheme,
+  useColorScheme
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { lightColors, darkColors } from '../theme/colors';
+import config from '../config/config';
 
 const AddRecordScreen = ({ navigation }) => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -38,7 +39,7 @@ const AddRecordScreen = ({ navigation }) => {
 
   const fetchAssets = async () => {
     try {
-      const response = await fetch('http://192.168.43.91/LocalGovtAssetMgt_App/backend/api/assets/read.php');
+      const response = await fetch(`${config.API_URL}assets/read.php`);
       const result = await response.json();
       if (result.status === 'success') {
         setAssets(result.data);
@@ -51,7 +52,7 @@ const AddRecordScreen = ({ navigation }) => {
 
   const fetchTeams = async () => {
     try {
-      const response = await fetch('http://192.168.43.91/LocalGovtAssetMgt_App/backend/api/teams/read.php');
+      const response = await fetch(`${config.API_URL}teams/read.php`);
       const result = await response.json();
       if (result.status === 'success') {
         setTeams(result.data);
@@ -79,7 +80,7 @@ const AddRecordScreen = ({ navigation }) => {
 
       console.log('Submitting data:', submitData); // Debug log
 
-      const response = await fetch('http://192.168.43.91/LocalGovtAssetMgt_App/backend/api/maintenance/create.php', {
+      const response = await fetch(`${config.API_URL}maintenance/create.php`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -246,4 +247,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AddRecordScreen; 
+export default AddRecordScreen;

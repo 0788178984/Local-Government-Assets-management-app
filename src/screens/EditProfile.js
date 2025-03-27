@@ -2,17 +2,18 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   TextInput,
+  StyleSheet,
   TouchableOpacity,
   Alert,
   ScrollView,
   Image,
-  useColorScheme,
+  useColorScheme
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { lightColors, darkColors } from '../theme/colors';
-import { getUserSession, updateUserProfile } from '../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import config from '../config/config';
 
 const EditProfile = ({ navigation }) => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -21,7 +22,8 @@ const EditProfile = ({ navigation }) => {
   const [profile, setProfile] = useState({
     Username: '',
     Email: '',
-    Role: ''
+    Role: '',
+    ProfilePicture: ''
   });
 
   useEffect(() => {
@@ -30,12 +32,14 @@ const EditProfile = ({ navigation }) => {
 
   const loadUserProfile = async () => {
     try {
-      const userData = await getUserSession();
+      const userData = await AsyncStorage.getItem('userSession');
       if (userData) {
+        const parsedData = JSON.parse(userData);
         setProfile({
-          Username: userData.Username || '',
-          Email: userData.Email || '',
-          Role: userData.Role || ''
+          Username: parsedData.Username || '',
+          Email: parsedData.Email || '',
+          Role: parsedData.Role || '',
+          ProfilePicture: parsedData.ProfilePicture || ''
         });
       }
     } catch (error) {
@@ -51,12 +55,12 @@ const EditProfile = ({ navigation }) => {
         return;
       }
 
-      const response = await updateUserProfile(profile);
-      if (response.status === 'success') {
+      const response = await AsyncStorage.setItem('userSession', JSON.stringify(profile));
+      if (response) {
         Alert.alert('Success', 'Profile updated successfully');
         navigation.goBack();
       } else {
-        throw new Error(response.message || 'Failed to update profile');
+        throw new Error('Failed to update profile');
       }
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -68,7 +72,7 @@ const EditProfile = ({ navigation }) => {
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.profileImageSection}>
         <Image
-          source={require('../../assets/logo1.png')}
+          source={profile.ProfilePicture ? { uri: profile.ProfilePicture } : { uri: config.defaultAvatarUrl }}
           style={styles.profileImage}
         />
         <Text style={[styles.roleText, { color: colors.text }]}>
@@ -131,6 +135,10 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
+  },
+  profileImageText: {
+    fontSize: 24,
+    fontWeight: 'bold',
   },
   roleText: {
     fontSize: 16,

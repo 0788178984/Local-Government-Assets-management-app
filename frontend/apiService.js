@@ -1,7 +1,8 @@
 import axios from 'axios';
+import config from '../src/config/config';
 
 // Update this to match your actual IP address
-const API_BASE_URL = 'http://10.40.1.234/LocalGovtAssetMgt_App/backend/api';
+const API_BASE_URL = config.API_URL;
 
 // Create an Axios instance with auth token interceptor
 const api = axios.create({
@@ -9,7 +10,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // 10 second timeout
+  timeout: 15000, // 15 second timeout
 });
 
 // Add auth token to requests

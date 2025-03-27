@@ -5,7 +5,7 @@ import Constants from 'expo-constants';
 import config from '../config/config';
 
 // Get API URL from config - ensure we use the correct IP address
-export const API_URL = 'http://192.168.43.91/LocalGovtAssetMgt_App/backend/api/';
+export const API_URL = config.API_URL;
 
 // Create axios instance
 const api = axios.create({
